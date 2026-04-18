@@ -1,0 +1,245 @@
+{
+  "level_1": {
+    "name": "The Alphabet",
+    "units": {
+      "1": {
+        "letters": [
+          "A",
+          "B",
+          "C"
+        ],
+        "start_page": 4,
+        "words": {
+          "A": [
+            "apple",
+            "ax",
+            "ant",
+            "alligator"
+          ],
+          "B": [
+            "bear",
+            "bird",
+            "bed",
+            "banana"
+          ],
+          "C": [
+            "cat",
+            "cup",
+            "car",
+            "computer"
+          ]
+        }
+      },
+      "2": {
+        "letters": [
+          "D",
+          "E",
+          "F"
+        ],
+        "start_page": 12,
+        "words": {
+          "D": [
+            "dog",
+            "desk",
+            "doll",
+            "duck"
+          ],
+          "E": [
+            "egg",
+            "elbow",
+            "envelope",
+            "elephant"
+          ],
+          "F": [
+            "fish",
+            "fan",
+            "farm",
+            "fork"
+          ]
+        }
+      },
+      "3": {
+        "letters": [
+          "G",
+          "H",
+          "I"
+        ],
+        "start_page": 24,
+        "words": {
+          "G": [
+            "gorilla",
+            "goat",
+            "gift",
+            "girl"
+          ],
+          "H": [
+            "horse",
+            "hat",
+            "house",
+            "hot dog"
+          ],
+          "I": [
+            "insect",
+            "ink",
+            "igloo",
+            "iguana"
+          ]
+        }
+      },
+      "4": {
+        "letters": [
+          "J",
+          "K",
+          "L"
+        ],
+        "start_page": 32,
+        "words": {
+          "J": [
+            "jet",
+            "jam",
+            "juice",
+            "jacket"
+          ],
+          "K": [
+            "kangaroo",
+            "key",
+            "king",
+            "kite"
+          ],
+          "L": [
+            "lion",
+            "lamp",
+            "leaf",
+            "lemon"
+          ]
+        }
+      },
+      "5": {
+        "letters": [
+          "M",
+          "N",
+          "O"
+        ],
+        "start_page": 44,
+        "words": {
+          "M": [
+            "monkey",
+            "milk",
+            "money",
+            "mouse"
+          ],
+          "N": [
+            "nut",
+            "net",
+            "nest",
+            "nose"
+          ],
+          "O": [
+            "octopus",
+            "ox",
+            "olive",
+            "ostrich"
+          ]
+        }
+      },
+      "6": {
+        "letters": [
+          "P",
+          "Q",
+          "R"
+        ],
+        "start_page": 52,
+        "words": {
+          "P": [
+            "peach",
+            "pen",
+            "panda",
+            "pineapple"
+          ],
+          "Q": [
+            "queen",
+            "quiz",
+            "quilt",
+            "question"
+          ],
+          "R": [
+            "rabbit",
+            "rose",
+            "rice",
+            "robot"
+          ]
+        }
+      },
+      "7": {
+        "letters": [
+          "S",
+          "T",
+          "U",
+          "V"
+        ],
+        "start_page": 64,
+        "words": {
+          "S": [
+            "seal",
+            "sun",
+            "soap",
+            "socks"
+          ],
+          "T": [
+            "turtle",
+            "tent",
+            "tiger",
+            "teacher"
+          ],
+          "U": [
+            "umbrella",
+            "up",
+            "uncle",
+            "umpire"
+          ],
+          "V": [
+            "van",
+            "vet",
+            "vest",
+            "violin"
+          ]
+        }
+      },
+      "8": {
+        "letters": [
+          "W",
+          "X",
+          "Y",
+          "Z"
+        ],
+        "start_page": 74,
+        "words": {
+          "W": [
+            "wolf",
+            "web",
+            "water",
+            "watch"
+          ],
+          "X": [
+            "fox",
+            "box",
+            "six",
+            "wax"
+          ],
+          "Y": [
+            "yo-yo",
+            "yak",
+            "yogurt",
+            "yacht"
+          ],
+          "Z": [
+            "zipper",
+            "zero",
+            "zoo",
+            "zebra"
+          ]
+        }
+      }
+    }
+  }
+}
