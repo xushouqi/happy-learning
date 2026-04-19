@@ -48,10 +48,10 @@ def crop_word_image(page: fitz.Page, text_bbox: tuple, page_num: int,
         # Fallback: crop just the text area
         clip = fitz.Rect(0, ty0 - 10, page.rect.width, ty1 + 10)
     else:
-        crop_y0 = min(ty0, best.y0) - 10
+        crop_y0 = best.y0 - 10
         crop_y1 = max(ty1, best.y1) + 10
-        crop_x0 = min(80, best.x0) - 5
-        crop_x1 = max(500, tx1) + 10
+        crop_x0 = 75
+        crop_x1 = 310
         clip = fitz.Rect(crop_x0, crop_y0, crop_x1, crop_y1)
 
     pix = page.get_pixmap(dpi=DPI, clip=clip)
