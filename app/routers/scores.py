@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models import Score, DailyProgress, UnitProgress, Unit, Textbook
 from app.schemas import ScoreCreate, ScoreResponse, DailyProgressCreate, DailyProgressResponse, UnitProgressResponse
@@ -38,7 +38,7 @@ def record_unit_complete(
 
     if progress:
         progress.attempts += 1
-        progress.last_attempt = datetime.utcnow()
+        progress.last_attempt = datetime.now(timezone.utc)
         if score > progress.best_score:
             progress.best_score = score
         progress.total_questions = total

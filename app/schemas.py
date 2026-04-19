@@ -45,6 +45,18 @@ class VocabWordResponse(BaseModel):
 
 
 # --- Question ---
+class QuestionCreate(BaseModel):
+    textbook_id: int
+    unit_id: int
+    type: str
+    difficulty: int = 1
+    options: List
+    answer: str
+    image_url: Optional[str] = None
+    audio_text: Optional[str] = None
+    sentence: Optional[str] = None
+
+
 class QuestionResponse(BaseModel):
     id: int
     textbook_id: int

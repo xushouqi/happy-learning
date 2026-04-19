@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import json, os, random
 from app.database import get_db
 from app.models import Question, Textbook, Unit
-from app.schemas import QuestionResponse
+from app.schemas import QuestionResponse, QuestionCreate
 
 router = APIRouter(prefix="/api/questions", tags=["questions"])
 
@@ -79,7 +79,7 @@ def random_questions(
 
 
 @router.post("/", response_model=QuestionResponse)
-def create_question(question: QuestionResponse, db: Session = Depends(get_db)):
+def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
     db_question = Question(**question.model_dump())
     db.add(db_question)
     db.commit()

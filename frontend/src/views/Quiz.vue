@@ -15,7 +15,13 @@
     </div>
 
     <!-- Question Card -->
-    <div v-if="currentQuestion" class="bg-white rounded-2xl p-6 shadow-lg w-full max-w-2xl">
+    <div v-if="loadError" class="bg-white rounded-2xl p-6 shadow-lg w-full max-w-2xl text-center">
+      <p class="text-2xl mb-4">😵</p>
+      <p class="text-xl text-gray-700 mb-4">加载题目失败</p>
+      <button @click="router.push('/dashboard')" class="px-6 py-3 bg-primary text-white rounded-full text-lg">返回首页</button>
+    </div>
+
+    <div v-else-if="currentQuestion" class="bg-white rounded-2xl p-6 shadow-lg w-full max-w-2xl">
       <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">
         {{ questionPrompt }}
       </h2>
@@ -325,6 +331,10 @@ const questionPrompt = computed(() => {
   }
 })
 
+const loadError = ref(false)
+
+const getUserId = () => parseInt(localStorage.getItem('userId'))
+
 onMounted(async () => {
   const unitId = route.params.unitId
   try {
@@ -335,6 +345,7 @@ onMounted(async () => {
     questions.value = qRes.data
     wordToImage.value = imgRes.data
   } catch {
+    loadError.value = true
     questions.value = []
   }
 })
@@ -391,14 +402,17 @@ const selectAnswer = (option) => {
 
 const nextQuestion = async () => {
   const last = results.value[results.value.length - 1]
-  try {
-    await scoresApi.record({
-      user_id: parseInt(localStorage.getItem('userId')),
-      question_id: last.questionId,
-      correct: last.correct,
-      score: last.score,
-    })
-  } catch {}
+  const userId = getUserId()
+  if (userId) {
+    try {
+      await scoresApi.record({
+        user_id: userId,
+        question_id: last.questionId,
+        correct: last.correct,
+        score: last.score,
+      })
+    } catch {}
+  }
 
   if (current.value + 1 < questions.value.length) {
     current.value++
@@ -411,15 +425,16 @@ const nextQuestion = async () => {
     builtSentenceWords.value = []
     wordTileUsed.value = []
   } else {
-    const userId = parseInt(localStorage.getItem('userId'))
-    try {
-      await scoresApi.recordUnitComplete({
-        user_id: userId,
-        unit_id: parseInt(route.params.unitId),
-        score: stars.value,
-        total: questions.value.length,
-      })
-    } catch {}
+    if (userId) {
+      try {
+        await scoresApi.recordUnitComplete({
+          user_id: userId,
+          unit_id: parseInt(route.params.unitId),
+          score: stars.value,
+          total: questions.value.length,
+        })
+      } catch {}
+    }
 
     router.push({
       name: 'results',

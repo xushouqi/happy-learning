@@ -24,18 +24,6 @@ try:
 except RuntimeError:
     pass  # dist not built yet (dev mode)
 
-# Mount word card images (if directory exists)
-try:
-    app.mount("/word-cards", StaticFiles(directory="data/word_cards"), name="word_cards")
-except RuntimeError:
-    pass  # word_cards directory not present
-
-# Mount phonics images
-try:
-    app.mount("/phonics", StaticFiles(directory="data/phonics_images"), name="phonics")
-except RuntimeError:
-    pass  # phonics_images directory not present
-
 # Mount muzzy word card images
 try:
     app.mount("/muzzy_word_cards", StaticFiles(directory="data/muzzy_word_cards"), name="muzzy_word_cards")

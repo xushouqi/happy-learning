@@ -89,8 +89,8 @@ const greeting = computed(() => {
 })
 
 const textbookIcons = {
-  1: '🐻',  // Big Muzzy
-  2: '🔤',  // Oxford Phonics
+  2: '🔤',  // Oxford Phonics World
+  3: '🐻',  // Big Muzzy
 }
 
 const recommendedUnit = computed(() => {

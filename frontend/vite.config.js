@@ -11,14 +11,6 @@ export default defineConfig({
         target: 'http://localhost:9000',
         changeOrigin: true,
       },
-      '/word-cards': {
-        target: 'http://localhost:9000',
-        changeOrigin: true,
-      },
-      '/phonics': {
-        target: 'http://localhost:9000',
-        changeOrigin: true,
-      },
       '/muzzy_word_cards': {
         target: 'http://localhost:9000',
         changeOrigin: true,

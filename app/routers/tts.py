@@ -33,4 +33,4 @@ async def speak(text: str = Query(..., min_length=1, max_length=500)):
             },
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="TTS generation failed")
