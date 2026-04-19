@@ -15,6 +15,10 @@ export default defineConfig({
         target: 'http://localhost:9000',
         changeOrigin: true,
       },
+      '/yakka_dee': {
+        target: 'http://localhost:9000',
+        changeOrigin: true,
+      },
     },
   },
 })

@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Import Yakka Dee season 2 & 3 vocabulary into the quiz database.
+"""Import Yakka Dee vocabulary from picture book PDFs (word cards).
 
-Parses PDF transcripts, extracts English word/phrase entries per topic,
-and generates 4 question types:
-- image_select_word: 看图选词
-- image_select_sentence: 看图选句 (uses full phrase)
-- listen_select: 听音选词
-- listen_spell_sentence: 听音拼句
+Extracts vocabulary from S01/S02/S03 picture books (绘本 PDFs).
+Each episode has ~6-17 word/phrase entries with images.
+Generates 4 question types per episode.
 """
 import re
 import random
@@ -20,110 +17,75 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from app.database import SessionLocal
 from app.models import Textbook, Unit, Question
 
-PDF_DIR = "/mnt/f/1.英语启蒙/Yakka Dee开口说单词/Yakka Dee 1-3季台词本PDF"
+PDF_DIR = "/mnt/f/1.英语启蒙/Yakka Dee开口说单词/Yakka Dee 1-3季单词图卡PDF"
+
+IMAGE_BASE = "yakka_dee/images"
+os.makedirs(os.path.join("data", IMAGE_BASE), exist_ok=True)
 
 
-def parse_pdf(pdf_path: str) -> str:
-    """Extract text from PDF using PyMuPDF for better font handling."""
+def extract_episodes(pdf_path: str) -> list[dict]:
+    """Extract episodes and their word entries from a picture book PDF."""
     doc = fitz.open(pdf_path)
-    all_text = []
-    for page in doc:
-        all_text.append(page.get_text())
-    doc.close()
-    return '\n'.join(all_text)
-
-
-def extract_topics(text: str) -> list[dict]:
-    """Extract topic sections and their word entries from PDF text."""
-    lines = text.split('\n')
-    topics = []
-    current_topic = None
+    episodes = {}
+    current_ep = None
     current_words = []
+    current_images = []
 
-    noise_patterns = [
-        "宗宗妈", "What will our yakka be today",
-        "Yakka Dee", "Dee! Where are you", "I've seen her",
-        "Over there", "SHE LAUGHS", "Dee！", "（ SHE LAUGHS ）",
-        "Dee!", "（SHE LAUGHS）", "yakkadee", "Yakka-Dee",
-        "公 号", "缺字幕", "目录：", "目录",
-    ]
+    for page in doc:
+        text = page.get_text("text").strip()
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
 
-    def is_noise(line):
-        return any(p in line for p in noise_patterns)
+        # Detect episode marker (S01E01, S02E01, etc.)
+        ep_match = re.search(r'S(\d+)E(\d+)', lines[0] if lines else '')
+        if ep_match:
+            # Save previous episode
+            if current_ep and current_words:
+                episodes[current_ep] = {
+                    "words": current_words,
+                    "images": current_images,
+                }
 
-    for line in lines:
-        line = line.strip()
-        if not line or is_noise(line):
-            continue
-
-        # Topic header: starts with 》
-        if line.startswith('》'):
-            if current_topic and current_words:
-                topics.append({"topic": current_topic, "words": current_words})
-            topic_text = line.replace('》', '').strip()
-            current_topic = topic_text
+            season = ep_match.group(1)
+            num = ep_match.group(2)
+            current_ep = f"S{season}E{num}"
             current_words = []
-        elif line.startswith('*') and current_topic:
-            word = line.lstrip('*').strip()
-            # Skip pronunciation guides and long Chinese explanations
-            if not word or len(word) > 80:
-                continue
-            # Remove pronunciation brackets like [ˈstraɪpi]
-            word = re.sub(r'\[.*?\]', '', word).strip()
-            # Skip lines that are purely Chinese explanations
-            if re.match(r'^[\u4e00-\u9fff\[\]\s：、，,.·]+$', word):
-                continue
-            # Clean trailing Chinese text
-            # Keep English part, strip Chinese translation
-            english = extract_english(word)
-            if english and len(english) > 1:
-                current_words.append(english)
+            current_images = []
+            lines = lines[1:]  # Remove episode marker
 
-    if current_topic and current_words:
-        topics.append({"topic": current_topic, "words": current_words})
+        # Extract images
+        for img_index, img_info in enumerate(page.get_images()):
+            xref = img_info[0]
+            base_image = doc.extract_image(xref)
+            if base_image:
+                image_name = f"{current_ep}_{img_index:02d}.{base_image['ext']}"
+                image_path = f"data/{IMAGE_BASE}/{image_name}"
+                if not os.path.exists(image_path):
+                    with open(image_path, "wb") as f:
+                        f.write(base_image["image"])
+                current_images.append(image_path)
 
-    return topics
+        # Extract text entries
+        for line in lines:
+            if len(line) > 2 and not line.startswith('公号'):
+                current_words.append(line)
 
+    # Save last episode
+    if current_ep and current_words:
+        episodes[current_ep] = {"words": current_words, "images": current_images}
 
-def extract_english(text: str) -> str:
-    """Extract the English portion of a word entry."""
-    # Remove part-of-speech tags like "n.", "adj.", "adv." (word boundary required)
-    text = re.sub(r'\b(?:n|adj|adv|v|prep|pron|phr)\.\s*', '', text)
-
-    # Find the split point between English and Chinese
-    result = []
-    for ch in text:
-        if '\u4e00' <= ch <= '\u9fff' or ch in ['【', '】', '（', '）']:
-            break
-        result.append(ch)
-
-    english = ''.join(result).strip().rstrip(',.，。')
-    # Normalize whitespace
-    english = re.sub(r'\s+', ' ', english)
-    return english
+    doc.close()
+    return episodes
 
 
-def generate_questions(topics: list[dict], textbook_id: int, unit_id: int) -> list:
-    """Generate 4 question types for all words in topics."""
-    # Collect all unique words across topics
-    all_words = []
-    word_to_topic = {}
-    for topic in topics:
-        for word in topic["words"]:
-            word_lower = word.lower()
-            if word_lower not in word_to_topic:
-                all_words.append(word)
-                word_to_topic[word_lower] = True
-
-    # Separate into single words/phrases vs sentences
-    # Phrases: 3+ words, or contain verb/auxiliary words, or end with punctuation
+def generate_questions(words: list[str]) -> list[dict]:
+    """Generate 4 question types from word/phrase list."""
+    # Separate words from phrases/sentences
     word_list = []
     phrase_list = []
-    for w in all_words:
-        words_in_entry = w.split()
+    for w in words:
         if (w.endswith(('.', '!', '?')) or
-            any(w.lower().startswith(x) for x in ["i'm", "i've", "she's", "he's", "it's", "we're", "they're", "you're", "let's", "don't", "can't"]) or
-            len(words_in_entry) >= 3):
+            len(w.split()) >= 3 or
+            any(w.lower().startswith(x) for x in ["i'm", "i've", "she's", "he's", "it's", "we're", "they're", "you're", "let's", "don't", "can't"])):
             phrase_list.append(w)
         else:
             word_list.append(w)
@@ -145,11 +107,10 @@ def generate_questions(topics: list[dict], textbook_id: int, unit_id: int) -> li
             "type": "image_select_word",
             "answer": word,
             "options": options,
-            "image_url": None,  # Will use pollinations.ai fallback
             "audio_text": word,
         })
 
-    # 2. 看图选句 (use longer phrases)
+    # 2. 看图选句
     for phrase in phrase_list:
         distractors = pick_distractors(phrase, phrase_list, 3)
         if len(distractors) < 3:
@@ -160,7 +121,6 @@ def generate_questions(topics: list[dict], textbook_id: int, unit_id: int) -> li
             "type": "image_select_sentence",
             "answer": phrase,
             "options": options,
-            "image_url": None,
             "audio_text": phrase,
         })
 
@@ -175,11 +135,10 @@ def generate_questions(topics: list[dict], textbook_id: int, unit_id: int) -> li
             "type": "listen_select",
             "answer": word,
             "options": options,
-            "image_url": None,
             "audio_text": word,
         })
 
-    # 4. 听音拼句 (word ordering)
+    # 4. 听音拼句
     for phrase in phrase_list:
         words_in_phrase = phrase.split()
         if len(words_in_phrase) < 2:
@@ -188,7 +147,6 @@ def generate_questions(topics: list[dict], textbook_id: int, unit_id: int) -> li
             "type": "listen_spell_sentence",
             "answer": " ".join(words_in_phrase),
             "options": words_in_phrase[:],
-            "image_url": None,
             "audio_text": phrase,
         })
 
@@ -198,23 +156,21 @@ def generate_questions(topics: list[dict], textbook_id: int, unit_id: int) -> li
 def main():
     random.seed(42)
 
-    # Parse PDFs
-    season_data = {}
-    for season, filename in [(2, "yakkadee第二季.pdf"), (3, "yakkadee第三季.pdf")]:
-        pdf_path = os.path.join(PDF_DIR, filename)
+    # Extract from all 3 seasons
+    all_episodes = {}
+    for season in [1, 2, 3]:
+        pdf_path = os.path.join(PDF_DIR, f"Yakka.Dee.S{season:02d} 绘本.pdf")
         if not os.path.exists(pdf_path):
-            print(f"SKIP {filename}: not found")
+            print(f"SKIP S{season}: {pdf_path} not found")
             continue
-        text = parse_pdf(pdf_path)
-        topics = extract_topics(text)
-        season_data[season] = topics
-        print(f"Season {season}: {len(topics)} topics")
-        for t in topics:
-            print(f"  {t['topic']}: {len(t['words'])} words")
+        episodes = extract_episodes(pdf_path)
+        for ep, data in episodes.items():
+            all_episodes[ep] = data
+        print(f"S{season}: {len(episodes)} episodes, extracted images to data/{IMAGE_BASE}/")
 
     db = SessionLocal()
     try:
-        # Delete existing Yakka Dee textbook
+        # Clear existing Yakka Dee
         existing = db.query(Textbook).filter(Textbook.name.like("%Yakka%")).first()
         if existing:
             units = db.query(Unit).filter(Unit.textbook_id == existing.id).all()
@@ -223,7 +179,7 @@ def main():
             db.query(Unit).filter(Unit.textbook_id == existing.id).delete()
             db.delete(existing)
             db.commit()
-            print(f"\nDeleted existing Yakka Dee textbook (id={existing.id})")
+            print(f"\nCleared existing Yakka Dee (id={existing.id})")
 
         # Create textbook
         textbook = Textbook(name="Yakka Dee 开口说单词", source_path=PDF_DIR)
@@ -236,41 +192,50 @@ def main():
         type_counts = {}
         unit_num = 0
 
-        for season in [2, 3]:
-            if season not in season_data:
-                continue
-            topics = season_data[season]
+        # Sort episodes by season and episode number
+        sorted_eps = sorted(all_episodes.keys(), key=lambda x: (int(re.search(r'S(\d+)', x).group(1)), int(re.search(r'E(\d+)', x).group(1))))
 
-            for topic in topics:
-                unit_num += 1
-                unit_name = f"S{season} - {topic['topic'].split()[0]}"
-                unit = Unit(textbook_id=textbook.id, name=unit_name, order=unit_num)
-                db.add(unit)
-                db.commit()
-                db.refresh(unit)
+        for ep_key in sorted_eps:
+            unit_num += 1
+            data = all_episodes[ep_key]
+            words = data["words"]
+            images = data["images"]
 
-                questions = generate_questions([topic], textbook.id, unit.id)
+            # Create descriptive unit name from first word (topic name)
+            topic_name = words[0].split()[0] if words else ep_key
+            unit_name = f"{ep_key} - {topic_name}"
+            unit = Unit(textbook_id=textbook.id, name=unit_name, order=unit_num)
+            db.add(unit)
+            db.commit()
+            db.refresh(unit)
 
-                topic_q_count = 0
-                for q in questions:
-                    question = Question(
-                        textbook_id=textbook.id,
-                        unit_id=unit.id,
-                        type=q["type"],
-                        difficulty=1,
-                        options=q["options"],
-                        answer=q["answer"],
-                        image_url=q["image_url"],
-                        audio_text=q["audio_text"],
-                    )
-                    db.add(question)
-                    topic_q_count += 1
-                    type_counts[q["type"]] = type_counts.get(q["type"], 0) + 1
+            questions = generate_questions(words)
 
-                db.commit()
-                total_questions += topic_q_count
-                print(f"  Unit {unit_num:02d}: {unit_name} -> {topic_q_count} questions")
+            # Map images to questions (cycle through available images)
+            for i, q in enumerate(questions):
+                image_url = None
+                if images:
+                    # Use the image at index matching this question's position
+                    img_idx = i % len(images)
+                    image_url = f"{IMAGE_BASE}/{os.path.basename(images[img_idx])}"
 
+                question = Question(
+                    textbook_id=textbook.id,
+                    unit_id=unit.id,
+                    type=q["type"],
+                    difficulty=1,
+                    options=q["options"],
+                    answer=q["answer"],
+                    image_url=image_url,
+                    audio_text=q["audio_text"],
+                )
+                db.add(question)
+                type_counts[q["type"]] = type_counts.get(q["type"], 0) + 1
+
+            total_questions += len(questions)
+            print(f"  Unit {unit_num:02d}: {unit_name} -> {len(questions)} questions ({len(images)} images)")
+
+        db.commit()
         print(f"\n{'='*50}")
         print(f"Total units: {unit_num}")
         print(f"Total questions: {total_questions}")

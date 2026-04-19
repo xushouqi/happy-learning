@@ -30,6 +30,12 @@ try:
 except RuntimeError:
     pass  # muzzy_word_cards directory not present
 
+# Mount Yakka Dee images
+try:
+    app.mount("/yakka_dee", StaticFiles(directory="data/yakka_dee"), name="yakka_dee")
+except RuntimeError:
+    pass  # yakka_dee directory not present
+
 # Register routers
 app.include_router(users.router)
 app.include_router(courses.router)
