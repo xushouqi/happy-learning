@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Import Yakka Dee vocabulary from picture book PDFs.
 
-Renders each PDF page to a PNG image and extracts text per page.
+For each word/phrase entry, crops a horizontal band containing:
+- The left-side illustration (x≈80-295)
+- The right-side text (x≈340-500)
+
 Each episode spans 2-3 pages with ~6-17 word/phrase entries.
 Generates 4 question types per episode.
 """
@@ -22,14 +25,50 @@ IMAGE_BASE = "yakka_dee/images"
 RENDER_DIR = f"data/{IMAGE_BASE}"
 os.makedirs(RENDER_DIR, exist_ok=True)
 DPI = 150
+SCALE = DPI / 72.0
+
+
+def crop_word_image(page: fitz.Page, text_bbox: tuple, page_num: int,
+                    ep_key: str, text_label: str, image_rects: list) -> str:
+    """Crop horizontal band: left illustration + right text for one entry."""
+    tx0, ty0, tx1, ty1 = text_bbox
+    text_y_center = (ty0 + ty1) / 2
+
+    # Find closest image by Y-center
+    best = None
+    best_dist = 999999
+    for img_rect in image_rects:
+        img_y_center = (img_rect.y0 + img_rect.y1) / 2
+        dist = abs(text_y_center - img_y_center)
+        if dist < best_dist:
+            best_dist = dist
+            best = img_rect
+
+    if best is None:
+        # Fallback: crop just the text area
+        clip = fitz.Rect(0, ty0 - 10, page.rect.width, ty1 + 10)
+    else:
+        crop_y0 = min(ty0, best.y0) - 10
+        crop_y1 = max(ty1, best.y1) + 10
+        crop_x0 = min(80, best.x0) - 5
+        crop_x1 = max(500, tx1) + 10
+        clip = fitz.Rect(crop_x0, crop_y0, crop_x1, crop_y1)
+
+    pix = page.get_pixmap(dpi=DPI, clip=clip)
+
+    safe_label = re.sub(r'[^\w\s]', '', text_label)[:25].strip()
+    image_name = f"{ep_key}_p{page_num:03d}_{safe_label.replace(' ', '_')}.png"
+    image_path = os.path.join(RENDER_DIR, image_name)
+    pix.save(image_path)
+    return f"{IMAGE_BASE}/{image_name}"
 
 
 def extract_episodes(pdf_path: str) -> list[dict]:
-    """Extract episodes with rendered page images and text."""
+    """Extract episodes with cropped word images and text."""
     doc = fitz.open(pdf_path)
     episodes = {}
     current_ep = None
-    page_entries = []  # (page_num, text_entries)
+    page_entries = []
 
     for page_idx, page in enumerate(doc):
         text = page.get_text("text").strip()
@@ -37,25 +76,44 @@ def extract_episodes(pdf_path: str) -> list[dict]:
 
         ep_match = re.search(r'S(\d+)E(\d+)', lines[0] if lines else '')
         if ep_match:
-            # Save previous episode
             if current_ep and page_entries:
                 episodes[current_ep] = page_entries
-
             current_ep = f"S{ep_match.group(1)}E{ep_match.group(2)}"
             page_entries = []
-            lines = lines[1:]  # Remove episode marker
+            lines = lines[1:]
 
-        # Render page to image
-        pix = page.get_pixmap(dpi=DPI)
-        image_name = f"{current_ep}_p{page_idx:03d}.png"
-        image_path = os.path.join(RENDER_DIR, image_name)
-        pix.save(image_path)
+        # Get large image rects (illustrations, not text overlays)
+        image_rects = []
+        for img in page.get_images(full=True):
+            xref = img[0]
+            info = doc.extract_image(xref)
+            if info['width'] > 100 and info['height'] > 100:
+                rects = page.get_image_rects(xref)
+                image_rects.extend(rects)
 
-        page_entries.append({
-            "page_num": page_idx,
-            "image_url": f"{IMAGE_BASE}/{image_name}",
-            "words": lines,
-        })
+        # Get text blocks with positions
+        blocks = page.get_text('dict')
+        for block in blocks['blocks']:
+            if 'lines' not in block:
+                continue
+            for line in block['lines']:
+                bbox = line['bbox']
+                t = ''.join(span['text'] for span in line['spans']).strip()
+                if not t or len(t) <= 2 or '宗宗妈' in t:
+                    continue
+                # Skip episode markers (e.g., "S01E01")
+                if re.match(r'^S\d+E\d+$', t):
+                    continue
+
+                safe_label = re.sub(r'[^\w\s]', '', t).strip()
+                image_url = crop_word_image(
+                    page, bbox, page_idx, current_ep or "unknown", safe_label, image_rects
+                )
+                page_entries.append({
+                    "page_num": page_idx,
+                    "image_url": image_url,
+                    "words": [t],
+                })
 
     if current_ep and page_entries:
         episodes[current_ep] = page_entries
@@ -156,7 +214,7 @@ def main():
         for ep, data in episodes.items():
             all_episodes[ep] = data
         image_count = len([f for f in os.listdir(RENDER_DIR) if f.startswith(f"S{season:02d}")])
-        print(f"S{season}: {len(episodes)} episodes, {image_count} page images rendered")
+        print(f"S{season}: {len(episodes)} episodes, {image_count} cropped images")
 
     db = SessionLocal()
     try:
@@ -194,7 +252,7 @@ def main():
             unit_num += 1
             page_entries = all_episodes[ep_key]
 
-            # Collect all words for this episode, tracking which page each word is from
+            # Each entry now has its own image_url
             all_words = []
             for entry in page_entries:
                 for word in entry["words"]:
@@ -211,11 +269,11 @@ def main():
             db.commit()
             db.refresh(unit)
 
-            # Generate questions from just the word texts
+            # Generate questions
             word_texts = [w["word"] for w in all_words]
             questions = generate_questions(word_texts)
 
-            # Build a map of word -> image_url for each question
+            # Map word -> image_url
             word_to_image = {}
             for entry in all_words:
                 word_to_image[entry["word"].lower()] = entry["image_url"]
@@ -223,7 +281,6 @@ def main():
             for i, q in enumerate(questions):
                 image_url = word_to_image.get(q["answer"].lower())
                 if not image_url:
-                    # Fallback: use first page image
                     image_url = page_entries[0]["image_url"] if page_entries else None
 
                 question = Question(
@@ -240,7 +297,7 @@ def main():
                 type_counts[q["type"]] = type_counts.get(q["type"], 0) + 1
 
             total_questions += len(questions)
-            print(f"  Unit {unit_num:02d}: {unit_name} -> {len(questions)} questions ({len(all_words)} words, {len(page_entries)} pages)")
+            print(f"  Unit {unit_num:02d}: {unit_name} -> {len(questions)} questions ({len(all_words)} words, {len(page_entries)} entries)")
 
         db.commit()
         print(f"\n{'='*50}")
