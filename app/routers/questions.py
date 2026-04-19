@@ -36,15 +36,15 @@ def get_quiz_questions(
     per_type: int = Query(10),
     db: Session = Depends(get_db),
 ):
-    """Get N random questions from each of the 4 quiz types for a unit."""
-    question_types = [
-        "image_select_word",
-        "image_select_sentence",
-        "listen_select",
-        "listen_spell_sentence",
-    ]
+    """Get N random questions from each available quiz type for a unit."""
+    # Dynamically discover which question types exist for this unit
+    existing_types = db.query(Question.type).filter(
+        Question.unit_id == unit_id
+    ).distinct().all()
+    existing_types = [t[0] for t in existing_types]
+
     result = []
-    for qtype in question_types:
+    for qtype in existing_types:
         questions = (
             db.query(Question)
             .filter(Question.unit_id == unit_id, Question.type == qtype)
