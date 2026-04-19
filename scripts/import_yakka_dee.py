@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Import Yakka Dee vocabulary from picture book PDFs (word cards).
+"""Import Yakka Dee vocabulary from picture book PDFs.
 
-Extracts vocabulary from S01/S02/S03 picture books (绘本 PDFs).
-Each episode has ~6-17 word/phrase entries with images.
+Renders each PDF page to a PNG image and extracts text per page.
+Each episode spans 2-3 pages with ~6-17 word/phrase entries.
 Generates 4 question types per episode.
 """
 import re
 import random
-import sys
 import os
+import sys
 
 import fitz  # PyMuPDF
 
@@ -18,60 +18,47 @@ from app.database import SessionLocal
 from app.models import Textbook, Unit, Question
 
 PDF_DIR = "/mnt/f/1.英语启蒙/Yakka Dee开口说单词/Yakka Dee 1-3季单词图卡PDF"
-
 IMAGE_BASE = "yakka_dee/images"
-os.makedirs(os.path.join("data", IMAGE_BASE), exist_ok=True)
+RENDER_DIR = f"data/{IMAGE_BASE}"
+os.makedirs(RENDER_DIR, exist_ok=True)
+DPI = 150
 
 
 def extract_episodes(pdf_path: str) -> list[dict]:
-    """Extract episodes and their word entries from a picture book PDF."""
+    """Extract episodes with rendered page images and text."""
     doc = fitz.open(pdf_path)
     episodes = {}
     current_ep = None
-    current_words = []
-    current_images = []
+    page_entries = []  # (page_num, text_entries)
 
-    for page in doc:
+    for page_idx, page in enumerate(doc):
         text = page.get_text("text").strip()
-        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        lines = [l.strip() for l in text.split('\n') if l.strip() and len(l.strip()) > 2 and '宗宗妈' not in l]
 
-        # Detect episode marker (S01E01, S02E01, etc.)
         ep_match = re.search(r'S(\d+)E(\d+)', lines[0] if lines else '')
         if ep_match:
             # Save previous episode
-            if current_ep and current_words:
-                episodes[current_ep] = {
-                    "words": current_words,
-                    "images": current_images,
-                }
+            if current_ep and page_entries:
+                episodes[current_ep] = page_entries
 
-            season = ep_match.group(1)
-            num = ep_match.group(2)
-            current_ep = f"S{season}E{num}"
-            current_words = []
-            current_images = []
+            current_ep = f"S{ep_match.group(1)}E{ep_match.group(2)}"
+            page_entries = []
             lines = lines[1:]  # Remove episode marker
 
-        # Extract images
-        for img_index, img_info in enumerate(page.get_images()):
-            xref = img_info[0]
-            base_image = doc.extract_image(xref)
-            if base_image:
-                image_name = f"{current_ep}_{img_index:02d}.{base_image['ext']}"
-                image_path = f"data/{IMAGE_BASE}/{image_name}"
-                if not os.path.exists(image_path):
-                    with open(image_path, "wb") as f:
-                        f.write(base_image["image"])
-                current_images.append(image_path)
+        # Render page to image
+        pix = page.get_pixmap(dpi=DPI)
+        image_name = f"{current_ep}_p{page_idx:03d}.png"
+        image_path = os.path.join(RENDER_DIR, image_name)
+        pix.save(image_path)
 
-        # Extract text entries
-        for line in lines:
-            if len(line) > 2 and not line.startswith('公号'):
-                current_words.append(line)
+        page_entries.append({
+            "page_num": page_idx,
+            "image_url": f"{IMAGE_BASE}/{image_name}",
+            "words": lines,
+        })
 
-    # Save last episode
-    if current_ep and current_words:
-        episodes[current_ep] = {"words": current_words, "images": current_images}
+    if current_ep and page_entries:
+        episodes[current_ep] = page_entries
 
     doc.close()
     return episodes
@@ -79,13 +66,15 @@ def extract_episodes(pdf_path: str) -> list[dict]:
 
 def generate_questions(words: list[str]) -> list[dict]:
     """Generate 4 question types from word/phrase list."""
-    # Separate words from phrases/sentences
     word_list = []
     phrase_list = []
     for w in words:
         if (w.endswith(('.', '!', '?')) or
             len(w.split()) >= 3 or
-            any(w.lower().startswith(x) for x in ["i'm", "i've", "she's", "he's", "it's", "we're", "they're", "you're", "let's", "don't", "can't"])):
+            any(w.lower().startswith(x) for x in [
+                "i'm", "i've", "she's", "he's", "it's",
+                "we're", "they're", "you're", "let's",
+                "don't", "can't"])):
             phrase_list.append(w)
         else:
             word_list.append(w)
@@ -140,13 +129,13 @@ def generate_questions(words: list[str]) -> list[dict]:
 
     # 4. 听音拼句
     for phrase in phrase_list:
-        words_in_phrase = phrase.split()
-        if len(words_in_phrase) < 2:
+        words_in = phrase.split()
+        if len(words_in) < 2:
             continue
         questions.append({
             "type": "listen_spell_sentence",
-            "answer": " ".join(words_in_phrase),
-            "options": words_in_phrase[:],
+            "answer": " ".join(words_in),
+            "options": words_in[:],
             "audio_text": phrase,
         })
 
@@ -166,7 +155,8 @@ def main():
         episodes = extract_episodes(pdf_path)
         for ep, data in episodes.items():
             all_episodes[ep] = data
-        print(f"S{season}: {len(episodes)} episodes, extracted images to data/{IMAGE_BASE}/")
+        image_count = len([f for f in os.listdir(RENDER_DIR) if f.startswith(f"S{season:02d}")])
+        print(f"S{season}: {len(episodes)} episodes, {image_count} page images rendered")
 
     db = SessionLocal()
     try:
@@ -192,32 +182,49 @@ def main():
         type_counts = {}
         unit_num = 0
 
-        # Sort episodes by season and episode number
-        sorted_eps = sorted(all_episodes.keys(), key=lambda x: (int(re.search(r'S(\d+)', x).group(1)), int(re.search(r'E(\d+)', x).group(1))))
+        sorted_eps = sorted(
+            all_episodes.keys(),
+            key=lambda x: (
+                int(re.search(r'S(\d+)', x).group(1)),
+                int(re.search(r'E(\d+)', x).group(1)),
+            ),
+        )
 
         for ep_key in sorted_eps:
             unit_num += 1
-            data = all_episodes[ep_key]
-            words = data["words"]
-            images = data["images"]
+            page_entries = all_episodes[ep_key]
 
-            # Create descriptive unit name from first word (topic name)
-            topic_name = words[0].split()[0] if words else ep_key
-            unit_name = f"{ep_key} - {topic_name}"
+            # Collect all words for this episode, tracking which page each word is from
+            all_words = []
+            for entry in page_entries:
+                for word in entry["words"]:
+                    all_words.append({
+                        "word": word,
+                        "image_url": entry["image_url"],
+                    })
+
+            # Create descriptive unit name from first word
+            first_word = all_words[0]["word"].split()[0] if all_words else ep_key
+            unit_name = f"{ep_key} - {first_word}"
             unit = Unit(textbook_id=textbook.id, name=unit_name, order=unit_num)
             db.add(unit)
             db.commit()
             db.refresh(unit)
 
-            questions = generate_questions(words)
+            # Generate questions from just the word texts
+            word_texts = [w["word"] for w in all_words]
+            questions = generate_questions(word_texts)
 
-            # Map images to questions (cycle through available images)
+            # Build a map of word -> image_url for each question
+            word_to_image = {}
+            for entry in all_words:
+                word_to_image[entry["word"].lower()] = entry["image_url"]
+
             for i, q in enumerate(questions):
-                image_url = None
-                if images:
-                    # Use the image at index matching this question's position
-                    img_idx = i % len(images)
-                    image_url = f"{IMAGE_BASE}/{os.path.basename(images[img_idx])}"
+                image_url = word_to_image.get(q["answer"].lower())
+                if not image_url:
+                    # Fallback: use first page image
+                    image_url = page_entries[0]["image_url"] if page_entries else None
 
                 question = Question(
                     textbook_id=textbook.id,
@@ -233,7 +240,7 @@ def main():
                 type_counts[q["type"]] = type_counts.get(q["type"], 0) + 1
 
             total_questions += len(questions)
-            print(f"  Unit {unit_num:02d}: {unit_name} -> {len(questions)} questions ({len(images)} images)")
+            print(f"  Unit {unit_num:02d}: {unit_name} -> {len(questions)} questions ({len(all_words)} words, {len(page_entries)} pages)")
 
         db.commit()
         print(f"\n{'='*50}")

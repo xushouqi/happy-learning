@@ -6,3 +6,5 @@ frontend/node_modules/
 frontend/dist/
 tmp/
 .claude/
+data/
+english_learning.db
