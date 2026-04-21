@@ -146,7 +146,7 @@
       <div v-if="['listen_select', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
         <button
           v-for="(option, idx) in currentQuestion.options"
-          :key="idx"
+          :key="option"
           @click="selectAnswer(option)"
           :disabled="answered"
           :class="[
@@ -367,7 +367,8 @@ const playAudio = async () => {
 
 // Auto-play audio when question changes
 watch(currentQuestion, (q) => {
-  if (['listen_select', 'listen_spell', 'listen_spell_sentence'].includes(q?.type)) {
+  if (!q) return
+  if (['listen_select', 'listen_spell', 'listen_spell_sentence'].includes(q.type)) {
     setTimeout(() => playAudio(), 300)
   }
   imageLoaded.value = true
