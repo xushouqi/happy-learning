@@ -3,7 +3,11 @@
     <header class="flex items-center justify-between mb-6">
       <button @click="router.push('/')" class="text-3xl hover:scale-110 transition-transform">🏠</button>
       <h1 class="text-2xl font-bold text-primary">{{ greeting }}</h1>
-      <button @click="router.push('/progress')" class="text-3xl hover:scale-110 transition-transform">📊</button>
+      <div class="flex gap-3">
+        <button @click="router.push('/wrongbook')" class="text-3xl hover:scale-110 transition-transform relative">📝<span v-if="wrongCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{{ wrongCount }}</span></button>
+        <button @click="router.push('/calendar')" class="text-3xl hover:scale-110 transition-transform">📅</button>
+        <button @click="router.push('/progress')" class="text-3xl hover:scale-110 transition-transform">📊</button>
+      </div>
     </header>
 
     <!-- Today's Challenge -->
@@ -67,13 +71,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { textbooks as textbooksApi, progress as progressApi } from '../api'
+import { textbooks as textbooksApi, progress as progressApi, scores as scoresApi } from '../api'
 
 const router = useRouter()
 const textbookList = ref([])
 const selectedBook = ref(null)
 const progressData = ref([])
 const userProgress = ref([])
+const wrongCount = ref(0)
 
 const currentUser = computed(() => {
   const id = localStorage.getItem('userId')
@@ -122,6 +127,11 @@ onMounted(async () => {
         progressData.value = res.data
       } catch {}
     }
+
+    try {
+      const res = await scoresApi.wrongQuestions(currentUser.value.id)
+      wrongCount.value = res.data?.length || 0
+    } catch {}
   }
 })
 

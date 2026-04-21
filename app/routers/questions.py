@@ -8,6 +8,13 @@ from app.schemas import QuestionResponse, QuestionCreate
 router = APIRouter(prefix="/api/questions", tags=["questions"])
 
 
+@router.get("/by-ids", response_model=list[QuestionResponse])
+def get_questions_by_ids(ids: str = Query(...), db: Session = Depends(get_db)):
+    """Get questions by comma-separated list of IDs."""
+    id_list = [int(x) for x in ids.split(',')]
+    return db.query(Question).filter(Question.id.in_(id_list)).all()
+
+
 @router.get("/word-to-image")
 def get_word_to_image():
     """Return mapping of vocabulary words to local image paths."""

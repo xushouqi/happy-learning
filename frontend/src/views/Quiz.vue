@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-sky-200 via-blue-100 to-green-200 p-4 flex flex-col items-center">
     <header class="w-full max-w-2xl flex items-center justify-between mb-6">
-      <button @click="router.push('/dashboard')" class="text-3xl hover:scale-110 transition-transform">🏠</button>
-      <span class="text-sm text-gray-600">第 {{ current + 1 }} / {{ questions.length }} 题</span>
+      <button @click="route.name === 'quizWrong' ? router.push('/wrongbook') : router.push('/dashboard')" class="text-3xl hover:scale-110 transition-transform">←</button>
+      <span class="text-sm text-gray-600">{{ route.name === 'quizWrong' ? '错题重做' : '第' }} {{ current + 1 }} / {{ questions.length }} {{ route.name === 'quizWrong' ? '题' : '题' }}</span>
       <span class="text-2xl">⭐ {{ stars }}</span>
     </header>
 
@@ -52,7 +52,8 @@
           @error="imageLoaded = false"
         />
         <div v-if="!imageLoaded" class="w-48 h-48 flex items-center justify-center mx-auto bg-gray-100 rounded-xl border-2 border-gray-200">
-          <span class="text-2xl">🖼️</span>
+          <span class="text-6xl font-bold text-gray-400" v-if="currentQuestion.image_url">{{ currentQuestion.answer }}</span>
+          <span class="text-2xl" v-else>🖼️</span>
         </div>
         <p v-if="currentQuestion.audio_text" class="text-gray-500 mt-2">
           <button @click="playAudio" class="text-3xl hover:scale-110 transition-transform">🔊</button>
@@ -336,14 +337,28 @@ const loadError = ref(false)
 const getUserId = () => parseInt(localStorage.getItem('userId'))
 
 onMounted(async () => {
-  const unitId = route.params.unitId
   try {
-    const [qRes, imgRes] = await Promise.all([
-      questionsApi.quiz(unitId),
-      questionsApi.wordToImage(),
-    ])
-    questions.value = qRes.data
+    const imgRes = await questionsApi.wordToImage()
     wordToImage.value = imgRes.data
+
+    if (route.name === 'quizWrong') {
+      // Wrong question review mode
+      const userId = getUserId()
+      if (!userId) { loadError.value = true; return }
+      const res = await scoresApi.wrongQuiz(userId)
+      const qids = res.data.question_ids
+      if (!qids || qids.length === 0) {
+        questions.value = []
+        return
+      }
+      const qRes = await questionsApi.byIds(qids)
+      questions.value = shuffleArray(qRes.data)
+    } else {
+      // Normal unit quiz mode
+      const unitId = route.params.unitId
+      const qRes = await questionsApi.quiz(unitId)
+      questions.value = qRes.data
+    }
   } catch {
     loadError.value = true
     questions.value = []
@@ -421,12 +436,13 @@ const nextQuestion = async () => {
     selectedOption.value = null
     isCorrect.value = false
     feedback.value = false
+    imageLoaded.value = true
     builtLetters.value = []
     tileUsed.value = []
     builtSentenceWords.value = []
     wordTileUsed.value = []
   } else {
-    if (userId) {
+    if (route.name !== 'quizWrong' && userId) {
       try {
         await scoresApi.recordUnitComplete({
           user_id: userId,
@@ -437,14 +453,18 @@ const nextQuestion = async () => {
       } catch {}
     }
 
-    router.push({
-      name: 'results',
-      query: {
-        total: stars.value,
-        count: questions.value.length,
-        unitId: route.params.unitId,
-      },
-    })
+    if (route.name === 'quizWrong') {
+      router.push('/wrongbook')
+    } else {
+      router.push({
+        name: 'results',
+        query: {
+          total: stars.value,
+          count: questions.value.length,
+          unitId: route.params.unitId,
+        },
+      })
+    }
   }
 }
 </script>

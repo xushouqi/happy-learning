@@ -32,16 +32,20 @@ export const questions = {
   random: (params) => api.get('/questions/random', { params }),
   create: (data) => api.post('/questions/', data),
   wordToImage: () => api.get('/questions/word-to-image'),
+  byIds: (ids) => api.get('/questions/by-ids', { params: { ids: ids.join(',') } }),
 }
 
 export const scores = {
   record: (data) => api.post('/scores/', data),
   byUser: (userId) => api.get(`/scores/user/${userId}`),
   recordUnitComplete: (data) => api.post('/scores/unit-complete', null, { params: data }),
+  wrongQuestions: (userId) => api.get(`/scores/user/${userId}/wrong-questions`),
+  wrongQuiz: (userId) => api.get(`/scores/user/${userId}/wrong-questions/quiz`),
 }
 
 export const progress = {
   record: (data) => api.post('/progress/', data),
   byUser: (userId) => api.get(`/progress/user/${userId}`),
   byCourse: (userId) => api.get(`/progress/user/${userId}/textbooks`),
+  calendar: (userId, year, month) => api.get(`/progress/user/${userId}/calendar`, { params: { year, month } }),
 }

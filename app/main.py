@@ -18,24 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for production frontend
-try:
-    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
-except RuntimeError:
-    pass  # dist not built yet (dev mode)
-
-# Mount muzzy word card images
-try:
-    app.mount("/muzzy_word_cards", StaticFiles(directory="data/muzzy_word_cards"), name="muzzy_word_cards")
-except RuntimeError:
-    pass  # muzzy_word_cards directory not present
-
-# Mount Yakka Dee images
-try:
-    app.mount("/yakka_dee", StaticFiles(directory="data/yakka_dee"), name="yakka_dee")
-except RuntimeError:
-    pass  # yakka_dee directory not present
-
 # Register routers
 app.include_router(users.router)
 app.include_router(courses.router)
@@ -47,6 +29,23 @@ app.include_router(scores.progress_router)
 app.include_router(media.router)
 app.include_router(tts.router)
 
+# Mount muzzy word card images (must be before / mount)
+try:
+    app.mount("/muzzy_word_cards", StaticFiles(directory="data/muzzy_word_cards"), name="muzzy_word_cards")
+except RuntimeError:
+    pass  # muzzy_word_cards directory not present
+
+# Mount Yakka Dee images (must be before / mount)
+try:
+    app.mount("/yakka_dee", StaticFiles(directory="data/yakka_dee"), name="yakka_dee")
+except RuntimeError:
+    pass  # yakka_dee directory not present
+
+# Mount static files for production frontend (must be after specific mounts)
+try:
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
+except RuntimeError:
+    pass  # dist not built yet (dev mode)
 
 @app.get("/api/health")
 def health_check():
