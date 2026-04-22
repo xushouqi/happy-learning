@@ -41,6 +41,7 @@ export const scores = {
   recordUnitComplete: (data) => api.post('/scores/unit-complete', null, { params: data }),
   wrongQuestions: (userId) => api.get(`/scores/user/${userId}/wrong-questions`),
   wrongQuiz: (userId) => api.get(`/scores/user/${userId}/wrong-questions/quiz`),
+  clearUnit: (userId, unitId) => api.delete(`/scores/user/${userId}/unit/${unitId}`),
 }
 
 export const progress = {

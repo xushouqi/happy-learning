@@ -48,16 +48,16 @@
 
         <!-- Unit list -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          <button
+          <div
             v-for="unit in course.units"
             :key="unit.id"
-            @click="goToUnit(unit.id)"
             :class="[
-              'p-3 rounded-xl text-center transition-all border-2',
+              'p-3 rounded-xl text-center transition-all border-2 relative group cursor-pointer',
               unit.completed
                 ? 'border-green-300 bg-green-50'
                 : 'border-gray-200 bg-gray-50 hover:border-primary',
             ]"
+            @click="goToUnit(unit.id)"
           >
             <div class="text-sm font-semibold text-gray-700">{{ unit.order }}</div>
             <div class="text-xs text-gray-500 truncate">{{ unit.name }}</div>
@@ -70,7 +70,16 @@
             <div v-if="unit.last_attempt" class="text-xs text-gray-400">
               {{ formatDate(unit.last_attempt) }}
             </div>
-          </button>
+            <!-- Clear button -->
+            <button
+              v-if="unit.completed || unit.attempts > 0"
+              @click.stop="clearUnit(unit.id)"
+              class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-700 rounded-full text-xs font-bold transition-colors"
+              title="清空学习记录"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -80,7 +89,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api, { users as usersApi } from '../api'
+import api, { users as usersApi, scores as scoresApi } from '../api'
 
 const router = useRouter()
 const users = ref([])
@@ -95,6 +104,14 @@ const selectUser = (userId) => {
 
 const goToUnit = (unitId) => {
   router.push(`/video/${unitId}`)
+}
+
+const clearUnit = async (unitId) => {
+  if (!confirm('确定要清空该单元的学习记录吗？')) return
+  try {
+    await scoresApi.clearUnit(selectedUser.value, unitId)
+    await loadProgress()
+  } catch {}
 }
 
 const formatDate = (isoString) => {

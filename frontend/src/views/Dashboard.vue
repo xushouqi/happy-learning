@@ -53,15 +53,24 @@
           <button @click="selectedBook = null" class="text-2xl">✕</button>
         </div>
         <div class="space-y-3">
-          <button
+          <div
             v-for="unit in selectedBook.units"
             :key="unit.id"
-            @click="startUnit(unit)"
-            class="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-accent/30 transition-all"
+            class="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-accent/30 transition-all group"
           >
-            <span class="font-semibold text-gray-700">{{ unit.name }}</span>
-            <span class="text-primary">开始 →</span>
-          </button>
+            <button @click="startUnit(unit)" class="flex-1 text-left">
+              <span class="font-semibold text-gray-700">{{ unit.name }}</span>
+              <span v-if="unit.completed" class="text-xs text-green-600 ml-2">✓ {{ unit.best_score }}/{{ unit.total_questions }}</span>
+            </button>
+            <button
+              v-if="unit.completed || unit.attempts > 0"
+              @click="clearUnit(unit.id)"
+              class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-full px-2 py-1 text-xs transition-colors"
+              title="清空学习记录"
+            >
+              清空
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -149,10 +158,35 @@ const getProgressPercent = (bookId) => {
 }
 
 const selectTextbook = (book) => {
-  selectedBook.value = book
+  // Merge progress data into unit objects
+  const bookProgress = userProgress.value.find(c => c.id === book.id)
+  const enrichedBook = { ...book, units: book.units.map(u => {
+    const up = bookProgress?.units?.find(pu => pu.id === u.id)
+    return up ? { ...u, ...up } : { ...u, completed: false, best_score: 0, total_questions: 0, attempts: 0 }
+  })}
+  selectedBook.value = enrichedBook
 }
 
 const startUnit = (unit) => {
   router.push(`/quiz/${unit.id}`)
+}
+
+const clearUnit = async (unitId) => {
+  if (!confirm('确定要清空该单元的学习记录吗？')) return
+  try {
+    await scoresApi.clearUnit(currentUser.value.id, unitId)
+    // Reload textbook list and selected book to reflect cleared progress
+    const [res, courseRes] = await Promise.all([
+      textbooksApi.list(),
+      progressApi.byCourse(currentUser.value.id),
+    ])
+    textbookList.value = res.data
+    userProgress.value = courseRes.data
+    // Update selectedBook if open
+    if (selectedBook.value) {
+      const updatedBook = res.data.find(b => b.id === selectedBook.value.id)
+      if (updatedBook) selectTextbook(updatedBook)
+    }
+  } catch {}
 }
 </script>

@@ -262,6 +262,32 @@ def get_textbook_progress(user_id: int, db: Session = Depends(get_db)):
     return result
 
 
+@router.delete("/user/{user_id}/unit/{unit_id}")
+def clear_unit_progress(user_id: int, unit_id: int, db: Session = Depends(get_db)):
+    """Clear all learning progress for a specific unit: scores, unit_progress, daily_progress."""
+    # Delete scores for this unit (via question_ids belonging to the unit)
+    question_ids = db.query(Question.id).filter(Question.unit_id == unit_id).subquery()
+    db.query(Score).filter(
+        Score.user_id == user_id,
+        Score.question_id.in_(question_ids)
+    ).delete(synchronize_session=False)
+
+    # Delete unit_progress
+    db.query(UnitProgress).filter(
+        UnitProgress.user_id == user_id,
+        UnitProgress.unit_id == unit_id
+    ).delete(synchronize_session=False)
+
+    # Delete daily_progress
+    db.query(DailyProgress).filter(
+        DailyProgress.user_id == user_id,
+        DailyProgress.unit_id == unit_id
+    ).delete(synchronize_session=False)
+
+    db.commit()
+    return {"success": True}
+
+
 @router.get("/user/{user_id}/wrong-questions")
 def list_wrong_questions(user_id: int, db: Session = Depends(get_db)):
     """Get questions where the latest attempt was wrong."""
