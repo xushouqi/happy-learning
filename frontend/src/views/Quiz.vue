@@ -41,6 +41,97 @@
         <p v-if="currentQuestion.sentence" class="text-gray-600 mt-2 text-lg italic">{{ currentQuestion.sentence }}</p>
       </div>
 
+      <!-- listen_spell_sentence: word ordering -->
+      <div v-if="currentQuestion.type === 'listen_spell_sentence'" class="text-center mb-4">
+        <button @click="playAudio" class="text-4xl hover:scale-110 transition-transform mb-3">🔊</button>
+        <p class="text-gray-500 mb-3">听一听，点击单词排列成正确的句子</p>
+        <!-- Built sentence -->
+        <div class="flex flex-wrap justify-center gap-2 mb-4 min-h-[48px] p-2 bg-gray-50 rounded-xl">
+          <span
+            v-for="(word, idx) in builtSentenceWords"
+            :key="'built-' + idx"
+            class="px-3 py-1 bg-primary text-white rounded-lg text-base font-semibold"
+          >{{ word }}</span>
+          <span v-if="builtSentenceWords.length === 0" class="text-gray-300 text-xl">?</span>
+        </div>
+        <!-- Available word tiles -->
+        <div class="flex flex-wrap justify-center gap-3">
+          <button
+            v-for="(word, idx) in sentenceTiles"
+            :key="'tile-' + idx"
+            @click="addWord(word, idx)"
+            :disabled="wordTileUsed[idx] || answered"
+            :class="[
+              'px-4 py-2 rounded-lg text-lg font-semibold transition-all border-2',
+              wordTileUsed[idx]
+                ? 'border-gray-100 bg-gray-100 text-gray-300 opacity-30'
+                : 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50',
+            ]"
+          >{{ word }}</button>
+        </div>
+        <button
+          v-if="builtSentenceWords.length > 0 && !answered"
+          @click="clearSentence"
+          class="mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-base font-semibold hover:bg-gray-300 transition-all"
+        >✕ 清除重排</button>
+        <button
+          v-if="builtSentenceWords.length === sentenceTiles.length && !answered"
+          @click="submitSentence"
+          class="mt-3 px-6 py-2 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
+        >确认 ✓</button>
+      </div>
+
+      <!-- image_listen_spell_sentence: image + audio + word ordering -->
+      <div v-if="currentQuestion.type === 'image_listen_spell_sentence'" class="text-center mb-4">
+        <img
+          v-if="currentQuestion.image_url"
+          :src="'/' + currentQuestion.image_url"
+          :alt="questionPrompt"
+          class="w-40 h-40 object-cover rounded-xl mx-auto border-2 border-gray-200 mb-3"
+          @load="imageLoaded = true"
+          @error="imageLoaded = false"
+        />
+        <div v-if="!imageLoaded && currentQuestion.image_url" class="w-40 h-40 flex items-center justify-center mx-auto bg-gray-100 rounded-xl border-2 border-gray-200 mb-3">
+          <span class="text-4xl">🖼️</span>
+        </div>
+        <button @click="playAudio" class="text-4xl hover:scale-110 transition-transform mb-3">🔊</button>
+        <p class="text-gray-500 mb-3">看图听音，点击单词排列成正确的句子</p>
+        <!-- Built sentence -->
+        <div class="flex flex-wrap justify-center gap-2 mb-4 min-h-[48px] p-2 bg-gray-50 rounded-xl">
+          <span
+            v-for="(word, idx) in builtSentenceWords"
+            :key="'built-' + idx"
+            class="px-3 py-1 bg-primary text-white rounded-lg text-base font-semibold"
+          >{{ word }}</span>
+          <span v-if="builtSentenceWords.length === 0" class="text-gray-300 text-xl">?</span>
+        </div>
+        <!-- Available word tiles -->
+        <div class="flex flex-wrap justify-center gap-3">
+          <button
+            v-for="(word, idx) in sentenceTiles"
+            :key="'tile-' + idx"
+            @click="addWord(word, idx)"
+            :disabled="wordTileUsed[idx] || answered"
+            :class="[
+              'px-4 py-2 rounded-lg text-lg font-semibold transition-all border-2',
+              wordTileUsed[idx]
+                ? 'border-gray-100 bg-gray-100 text-gray-300 opacity-30'
+                : 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50',
+            ]"
+          >{{ word }}</button>
+        </div>
+        <button
+          v-if="builtSentenceWords.length > 0 && !answered"
+          @click="clearSentence"
+          class="mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-base font-semibold hover:bg-gray-300 transition-all"
+        >✕ 清除重排</button>
+        <button
+          v-if="builtSentenceWords.length === sentenceTiles.length && !answered"
+          @click="submitSentence"
+          class="mt-3 px-6 py-2 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
+        >确认 ✓</button>
+      </div>
+
       <!-- Image for image_select_sentence -->
       <div v-if="currentQuestion.type === 'image_select_sentence'" class="text-center mb-4">
         <img
@@ -60,8 +151,8 @@
         </p>
       </div>
 
-      <!-- Audio button for listen_select -->
-      <div v-if="currentQuestion.type === 'listen_select'" class="text-center mb-4">
+      <!-- Audio button for listen_select_word -->
+      <div v-if="currentQuestion.type === 'listen_select_word'" class="text-center mb-4">
         <button @click="playAudio" class="text-5xl hover:scale-110 transition-transform">🔊</button>
       </div>
 
@@ -103,48 +194,8 @@
         >确认 ✓</button>
       </div>
 
-      <!-- listen_spell_sentence: word ordering -->
-      <div v-if="currentQuestion.type === 'listen_spell_sentence'" class="text-center mb-4">
-        <button @click="playAudio" class="text-4xl hover:scale-110 transition-transform mb-3">🔊</button>
-        <p class="text-gray-500 mb-3">听一听，点击单词排列成正确的句子</p>
-        <!-- Built sentence -->
-        <div class="flex flex-wrap justify-center gap-2 mb-4 min-h-[48px] p-2 bg-gray-50 rounded-xl">
-          <span
-            v-for="(word, idx) in builtSentenceWords"
-            :key="'built-' + idx"
-            class="px-3 py-1 bg-primary text-white rounded-lg text-base font-semibold"
-          >{{ word }}</span>
-          <span v-if="builtSentenceWords.length === 0" class="text-gray-300 text-xl">?</span>
-        </div>
-        <!-- Available word tiles -->
-        <div class="flex flex-wrap justify-center gap-3">
-          <button
-            v-for="(word, idx) in sentenceTiles"
-            :key="'tile-' + idx"
-            @click="addWord(word, idx)"
-            :disabled="wordTileUsed[idx] || answered"
-            :class="[
-              'px-4 py-2 rounded-lg text-lg font-semibold transition-all border-2',
-              wordTileUsed[idx]
-                ? 'border-gray-100 bg-gray-100 text-gray-300 opacity-30'
-                : 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50',
-            ]"
-          >{{ word }}</button>
-        </div>
-        <button
-          v-if="builtSentenceWords.length > 0 && !answered"
-          @click="clearSentence"
-          class="mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-base font-semibold hover:bg-gray-300 transition-all"
-        >✕ 清除重排</button>
-        <button
-          v-if="builtSentenceWords.length === sentenceTiles.length && !answered"
-          @click="submitSentence"
-          class="mt-3 px-6 py-2 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
-        >确认 ✓</button>
-      </div>
-
-      <!-- Options (listen_select, image_select_word, image_select_sentence) -->
-      <div v-if="['listen_select', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
+      <!-- Options (listen_select_word, image_select_word, image_select_sentence) -->
+      <div v-if="['listen_select_word', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
         <button
           v-for="(option, idx) in currentQuestion.options"
           :key="option"
@@ -235,7 +286,7 @@ const scrambleTiles = computed(() => {
 
 const sentenceTiles = computed(() => {
   const q = currentQuestion.value
-  if (!q || q.type !== 'listen_spell_sentence') return []
+  if (!q || !['listen_spell_sentence', 'image_listen_spell_sentence'].includes(q.type)) return []
   const words = q.options || []
   // Shuffle until different from original order
   let shuffled = shuffleArray(words)
@@ -323,11 +374,12 @@ const questionPrompt = computed(() => {
   const q = currentQuestion.value
   if (!q) return ''
   switch (q.type) {
-    case 'listen_select': return '听一听，选一选！'
+    case 'listen_select_word': return '听一听，选一选！'
     case 'image_select_word': return '看图选词！'
     case 'image_select_sentence': return '看图选句子！'
     case 'listen_spell': return '拼一拼！'
     case 'listen_spell_sentence': return '拼一拼句子！'
+    case 'image_listen_spell_sentence': return '看图听音拼句！'
     default: return '选一选！'
   }
 })
@@ -356,7 +408,8 @@ onMounted(async () => {
     } else {
       // Normal unit quiz mode
       const unitId = route.params.unitId
-      const qRes = await questionsApi.quiz(unitId)
+      const types = route.query.types
+      const qRes = await questionsApi.quiz(unitId, types)
       questions.value = qRes.data
     }
   } catch {
@@ -383,7 +436,7 @@ const playAudio = async () => {
 // Auto-play audio when question changes
 watch(currentQuestion, (q) => {
   if (!q) return
-  if (['listen_select', 'listen_spell', 'listen_spell_sentence'].includes(q.type)) {
+  if (['listen_select_word', 'listen_spell', 'listen_spell_sentence', 'image_listen_spell_sentence'].includes(q.type)) {
     setTimeout(() => playAudio(), 300)
   }
   imageLoaded.value = true

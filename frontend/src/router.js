@@ -8,6 +8,7 @@ const routes = [
   { path: '/wrongbook', name: 'wrongbook', component: () => import('./views/WrongBook.vue') },
   { path: '/quiz/wrong', name: 'quizWrong', component: () => import('./views/Quiz.vue') },
   { path: '/video/:unitId', name: 'video', component: () => import('./views/VideoPlayer.vue') },
+  { path: '/quiz-type/:unitId', name: 'quizType', component: () => import('./views/QuizTypeSelect.vue') },
   { path: '/quiz/:unitId', name: 'quiz', component: () => import('./views/Quiz.vue') },
   { path: '/results', name: 'results', component: () => import('./views/Results.vue') },
 ]

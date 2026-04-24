@@ -61,7 +61,7 @@ def is_sentence(text):
 
 
 def generate_questions_for_unit(cards):
-    """Generate all 4 question types for a unit's cards."""
+    """Generate all 5 question types for a unit's cards."""
     # Separate words and sentences, group by image
     # Each card has text + image. One image may have word + sentence cards.
     # Group by image to link word and sentence
@@ -134,13 +134,11 @@ def generate_questions_for_unit(cards):
             "audio_text": entry["word"],
         })
 
-    # 4. 听音拼句: play audio (sentence), show word-letter/word buttons to assemble
-    # Options are individual words from the sentence (shuffled)
+    # 4. 听音拼句: play audio (sentence), show word buttons to assemble (no image)
     for entry in sentence_entries:
         sentence = entry["sentence"]
         words = sentence.split()
         if len(words) < 2:
-            # Too short for spelling, use word buttons as-is
             options = words[:]
         else:
             options = words[:]
@@ -150,6 +148,23 @@ def generate_questions_for_unit(cards):
             "answer": " ".join(words),
             "options": options,
             "image_url": None,
+            "audio_text": sentence,
+        })
+
+    # 5. 看图听音拼句: show image + play audio, show word buttons to assemble
+    for entry in sentence_entries:
+        sentence = entry["sentence"]
+        words = sentence.split()
+        if len(words) < 2:
+            options = words[:]
+        else:
+            options = words[:]
+        random.shuffle(options)
+        questions.append({
+            "type": "image_listen_spell_sentence",
+            "answer": " ".join(words),
+            "options": options,
+            "image_url": entry["image_url"],
             "audio_text": sentence,
         })
 

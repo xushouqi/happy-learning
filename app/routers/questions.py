@@ -40,28 +40,58 @@ def list_questions(unit_id: int, db: Session = Depends(get_db)):
 @router.get("/quiz/{unit_id}", response_model=list[QuestionResponse])
 def get_quiz_questions(
     unit_id: int,
-    per_type: int = Query(10),
+    question_types: str = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Get N random questions from each available quiz type for a unit."""
-    # Dynamically discover which question types exist for this unit
+    """Get questions for a unit quiz.
+
+    question_types: comma-separated list of types. If None, use all available types.
+    For single type selection, returns ALL questions of that type (shuffled).
+    For mixed/all types, returns 10 per type (shuffled).
+    """
     existing_types = db.query(Question.type).filter(
         Question.unit_id == unit_id
     ).distinct().all()
     existing_types = [t[0] for t in existing_types]
 
+    if question_types:
+        requested_types = [t.strip() for t in question_types.split(',') if t.strip()]
+        types_to_use = [t for t in requested_types if t in existing_types]
+    else:
+        types_to_use = existing_types
+
     result = []
-    for qtype in existing_types:
+    # 如果只选择了一种题型，返回该题型所有题目
+    if len(types_to_use) == 1:
         questions = (
             db.query(Question)
-            .filter(Question.unit_id == unit_id, Question.type == qtype)
+            .filter(Question.unit_id == unit_id, Question.type == types_to_use[0])
             .all()
         )
         random.shuffle(questions)
-        result.extend(questions[:per_type])
+        result.extend(questions)
+    else:
+        # 综合题或多题型，每种取10题
+        for qtype in types_to_use:
+            questions = (
+                db.query(Question)
+                .filter(Question.unit_id == unit_id, Question.type == qtype)
+                .all()
+            )
+            random.shuffle(questions)
+            result.extend(questions[:10])
 
     random.shuffle(result)
     return result
+
+
+@router.get("/types/{unit_id}")
+def get_available_types(unit_id: int, db: Session = Depends(get_db)):
+    """Get available question types for a unit."""
+    existing_types = db.query(Question.type).filter(
+        Question.unit_id == unit_id
+    ).distinct().all()
+    return {"types": [t[0] for t in existing_types]}
 
 
 @router.get("/random", response_model=list[QuestionResponse])

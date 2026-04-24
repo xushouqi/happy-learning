@@ -168,7 +168,7 @@ const selectTextbook = (book) => {
 }
 
 const startUnit = (unit) => {
-  router.push(`/quiz/${unit.id}`)
+  router.push(`/quiz-type/${unit.id}`)
 }
 
 const clearUnit = async (unitId) => {

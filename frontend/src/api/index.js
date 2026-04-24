@@ -27,7 +27,8 @@ export const units = {
 
 export const questions = {
   byUnit: (unitId) => api.get(`/questions/unit/${unitId}`),
-  quiz: (unitId) => api.get(`/questions/quiz/${unitId}`),
+  quiz: (unitId, types) => api.get(`/questions/quiz/${unitId}`, { params: { question_types: types } }),
+  types: (unitId) => api.get(`/questions/types/${unitId}`),
   byTextbook: (textbookId) => api.get(`/questions/textbook/${textbookId}`),
   random: (params) => api.get('/questions/random', { params }),
   create: (data) => api.post('/questions/', data),
