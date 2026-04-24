@@ -77,6 +77,17 @@
               </span>
               <span v-if="entry.completed" class="ml-2 text-green-600 text-xs">已完成</span>
             </div>
+            <!-- Type breakdown -->
+            <div v-if="entry.type_stats && Object.keys(entry.type_stats).length > 0" class="mt-2 flex flex-wrap gap-1">
+              <span
+                v-for="(stats, type) in entry.type_stats"
+                :key="type"
+                class="px-2 py-0.5 rounded text-xs"
+                :class="stats.correct >= stats.total ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'"
+              >
+                {{ typeLabel(type) }}: {{ stats.correct }}/{{ stats.total }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -102,6 +113,17 @@ const textbookIcons = {
   3: '🐻',
   4: '🦌',
   5: '📘',
+  6: '🐻',
+}
+
+const typeLabels = {
+  image_select_word: '看图选词',
+  image_select_sentence: '看图选句',
+  listen_select: '听音选答',
+  listen_select_word: '听音选词',
+  listen_spell: '听音拼词',
+  listen_spell_sentence: '听音拼句',
+  image_listen_spell_sentence: '看图听音拼句',
 }
 
 const weekdayNames = ['日', '一', '二', '三', '四', '五', '六']
@@ -141,6 +163,8 @@ const isToday = (day) => {
 const textbookIcon = (tbId) => {
   return textbookIcons[tbId] || '📚'
 }
+
+const typeLabel = (type) => typeLabels[type] || type
 
 const textbookSummary = (day) => {
   const entries = getEntries(day)

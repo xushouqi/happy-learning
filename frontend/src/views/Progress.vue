@@ -64,6 +64,17 @@
             <div v-if="unit.completed" class="text-xs text-green-600 mt-1">
               {{ unit.best_score }}/{{ unit.total_questions }}
             </div>
+            <!-- Type stats -->
+            <div v-if="getTypeStats(unit.id)" class="mt-1 flex flex-wrap gap-0.5 justify-center">
+              <span
+                v-for="(stats, type) in getTypeStats(unit.id)"
+                :key="type"
+                class="px-1 py-0.5 rounded text-[10px]"
+                :class="stats.correct >= stats.total ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'"
+              >
+                {{ typeShort(type) }}:{{ stats.correct }}/{{ stats.total }}
+              </span>
+            </div>
             <div v-if="unit.attempts > 1" class="text-xs text-gray-400">
               尝试 {{ unit.attempts }} 次
             </div>
@@ -95,6 +106,21 @@ const router = useRouter()
 const users = ref([])
 const selectedUser = ref(parseInt(localStorage.getItem('userId')) || 1)
 const courseProgress = ref([])
+const typeStats = ref({})
+
+const typeShortLabels = {
+  image_select_word: '图词',
+  image_select_sentence: '图句',
+  listen_select: '听选',
+  listen_select_word: '听词',
+  listen_spell: '拼词',
+  listen_spell_sentence: '拼句',
+  image_listen_spell_sentence: '图拼',
+}
+
+const typeShort = (type) => typeShortLabels[type] || type
+
+const getTypeStats = (unitId) => typeStats.value[unitId] || null
 
 const selectUser = (userId) => {
   selectedUser.value = userId
@@ -122,10 +148,15 @@ const formatDate = (isoString) => {
 
 const loadProgress = async () => {
   try {
-    const res = await api.get(`/progress/user/${selectedUser.value}/textbooks`)
-    courseProgress.value = res.data
+    const [progressRes, statsRes] = await Promise.all([
+      api.get(`/progress/user/${selectedUser.value}/textbooks`),
+      scoresApi.typeStats(selectedUser.value),
+    ])
+    courseProgress.value = progressRes.data
+    typeStats.value = statsRes.data
   } catch {
     courseProgress.value = []
+    typeStats.value = {}
   }
 }
 

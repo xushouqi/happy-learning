@@ -23,9 +23,19 @@
 
       <!-- Stats summary -->
       <div v-else class="bg-white rounded-2xl p-4 shadow-lg mb-6">
-        <p class="text-center text-gray-600">
+        <p class="text-center text-gray-600 mb-3">
           共 <span class="text-primary font-bold text-lg">{{ wrongQuestions.length }}</span> 道错题
         </p>
+        <!-- Type stats -->
+        <div class="flex flex-wrap justify-center gap-2">
+          <span
+            v-for="(count, type) in typeStats"
+            :key="type"
+            class="px-3 py-1 rounded-full bg-red-100 text-red-600 text-sm font-semibold"
+          >
+            {{ typeLabel(type) }}: {{ count }}
+          </span>
+        </div>
       </div>
 
       <!-- Wrong questions list, grouped by textbook -->
@@ -105,12 +115,22 @@ const typeLabels = {
   image_select_word: '看图选词',
   image_select_sentence: '看图选句',
   listen_select: '听音选答',
+  listen_select_word: '听音选词',
   listen_spell: '听音拼词',
   listen_spell_sentence: '听音拼句',
+  image_listen_spell_sentence: '看图听音拼句',
 }
 
 const textbookIcon = (tbId) => textbookIcons[tbId] || '📚'
 const typeLabel = (type) => typeLabels[type] || type
+
+const typeStats = computed(() => {
+  const stats = {}
+  for (const q of wrongQuestions.value) {
+    stats[q.type] = (stats[q.type] || 0) + 1
+  }
+  return stats
+})
 
 const groupedQuestions = computed(() => {
   const groups = {}

@@ -4,9 +4,19 @@
       <button @click="router.push('/')" class="text-3xl hover:scale-110 transition-transform">🏠</button>
       <h1 class="text-2xl font-bold text-primary">{{ greeting }}</h1>
       <div class="flex gap-3">
-        <button @click="router.push('/wrongbook')" class="text-3xl hover:scale-110 transition-transform relative">📝<span v-if="wrongCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{{ wrongCount }}</span></button>
-        <button @click="router.push('/calendar')" class="text-3xl hover:scale-110 transition-transform">📅</button>
-        <button @click="router.push('/progress')" class="text-3xl hover:scale-110 transition-transform">📊</button>
+        <button @click="router.push('/wrongbook')" class="flex flex-col items-center hover:scale-110 transition-transform relative">
+          <span class="text-3xl">📝</span>
+          <span class="text-xs text-gray-600">错题</span>
+          <span v-if="wrongCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{{ wrongCount }}</span>
+        </button>
+        <button @click="router.push('/calendar')" class="flex flex-col items-center hover:scale-110 transition-transform">
+          <span class="text-3xl">📅</span>
+          <span class="text-xs text-gray-600">日历</span>
+        </button>
+        <button @click="router.push('/progress')" class="flex flex-col items-center hover:scale-110 transition-transform">
+          <span class="text-3xl">📊</span>
+          <span class="text-xs text-gray-600">进度</span>
+        </button>
       </div>
     </header>
 

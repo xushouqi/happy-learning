@@ -121,6 +121,7 @@ def get_calendar(user_id: int, year: int, month: int, db: Session = Depends(get_
             Score.correct,
             cast(Score.created_at, SaDate).label("attempt_date"),
             Question.unit_id.label("unit_id"),
+            Question.type.label("qtype"),
         )
         .join(Question, Score.question_id == Question.id)
         .filter(Score.user_id == user_id)
@@ -130,7 +131,8 @@ def get_calendar(user_id: int, year: int, month: int, db: Session = Depends(get_
     )
 
     result = {}
-    for question_id, correct, attempt_date, unit_id in score_agg:
+    type_result = {}  # {date: {unit_id: {type: {correct, total}}}}
+    for question_id, correct, attempt_date, unit_id, qtype in score_agg:
         if attempt_date is None:
             continue
         key = attempt_date.isoformat()
@@ -140,6 +142,11 @@ def get_calendar(user_id: int, year: int, month: int, db: Session = Depends(get_
         result[key][unit_id]["total"] += 1
         if correct:
             result[key][unit_id]["correct"] += 1
+        # Track type stats
+        type_result.setdefault(key, {}).setdefault(unit_id, {}).setdefault(qtype, {"correct": 0, "total": 0})
+        type_result[key][unit_id][qtype]["total"] += 1
+        if correct:
+            type_result[key][unit_id][qtype]["correct"] += 1
 
     # Build final output with unit/textbook info
     unit_cache = {}
@@ -169,6 +176,7 @@ def get_calendar(user_id: int, year: int, month: int, db: Session = Depends(get_
                 "total_score": 0,
                 "total_questions": stats["total"],
                 "completed": True,
+                "type_stats": type_result.get(key, {}).get(uid, {}),
             })
 
     # Fallback: UnitProgress for dates with no Score data
@@ -340,6 +348,37 @@ def list_wrong_questions(user_id: int, db: Session = Depends(get_db)):
             "textbook_id": textbook_id,
             "wrong_count": wrong_counts.get(q.id, 1),
         })
+    return result
+
+
+@router.get("/user/{user_id}/type-stats")
+def get_type_stats(user_id: int, db: Session = Depends(get_db)):
+    """Get question type statistics per unit for a user."""
+    # Get all scores for user with question type info
+    scores_with_type = (
+        db.query(Score, Question.type, Question.unit_id)
+        .join(Question, Score.question_id == Question.id)
+        .filter(Score.user_id == user_id)
+        .all()
+    )
+
+    # Aggregate by unit_id and type
+    unit_type_stats = {}
+    for score, qtype, unit_id in scores_with_type:
+        key = (unit_id, qtype)
+        if key not in unit_type_stats:
+            unit_type_stats[key] = {"correct": 0, "total": 0, "wrong": 0}
+        unit_type_stats[key]["total"] += 1
+        if score.correct:
+            unit_type_stats[key]["correct"] += 1
+        else:
+            unit_type_stats[key]["wrong"] += 1
+
+    # Convert to output format: {unit_id: {type: stats}}
+    result = {}
+    for (unit_id, qtype), stats in unit_type_stats.items():
+        result.setdefault(unit_id, {})[qtype] = stats
+
     return result
 
 
