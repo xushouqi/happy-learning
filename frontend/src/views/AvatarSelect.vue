@@ -10,7 +10,7 @@
         @click="selectUser(avatar)"
         class="flex flex-col items-center p-6 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
       >
-        <span class="text-7xl">{{ avatar.emoji }}</span>
+        <span class="text-4xl">{{ avatar.avatar }}</span>
         <span class="mt-3 text-xl font-semibold text-gray-700">{{ avatar.name }}</span>
       </button>
     </div>
