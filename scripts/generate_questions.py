@@ -508,15 +508,55 @@ def generate_muzzy_questions():
             ))
             questions_created += 1
 
-        # 5. Listen Spell Sentence - word ordering
+        # 5. Listen Spell Sentence - word ordering with 1 distractor
         for i, sentence in enumerate(unit_sentences[:min(3, len(unit_sentences))]):
+            sentence_words = sentence.split()
+            other_words = []
+            for s in unit_sentences:
+                if s != sentence:
+                    for w in s.split():
+                        if w not in sentence_words and w not in other_words:
+                            other_words.append(w)
+            random.shuffle(other_words)
+            distractor = other_words[:1] if other_words else []
+            options = sentence_words + distractor
             db.add(Question(
                 textbook_id=muzzy.id,
                 unit_id=unit.id,
                 type="listen_spell_sentence",
                 difficulty=3,
-                options=sentence.split(),  # individual words
+                options=options,
                 answer=sentence,
+                audio_text=sentence,
+                sentence=sentence,
+            ))
+            questions_created += 1
+
+        # 6. Image Listen Spell Sentence - image + audio + word ordering with 1 distractor
+        for i, w in enumerate(data["words"]):
+            sentence = w["sentence"]
+            sentence_words = sentence.split()
+            # Pick 1 distractor word from other sentences
+            other_words = []
+            for s in unit_sentences:
+                if s != sentence:
+                    for w2 in s.split():
+                        if w2 not in sentence_words and w2 not in other_words:
+                            other_words.append(w2)
+            random.shuffle(other_words)
+            distractor = other_words[:1] if other_words else []
+            options = sentence_words + distractor
+            image_url = word_to_image.get(w["word"], "")
+            if not image_url:
+                image_url = find_word_image(w["word"])
+            db.add(Question(
+                textbook_id=muzzy.id,
+                unit_id=unit.id,
+                type="image_listen_spell_sentence",
+                difficulty=3,
+                options=options,
+                answer=sentence,
+                image_url=image_url,
                 audio_text=sentence,
                 sentence=sentence,
             ))

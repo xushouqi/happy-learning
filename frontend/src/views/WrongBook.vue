@@ -114,8 +114,7 @@ const textbookIcons = {
 const typeLabels = {
   image_select_word: '看图选词',
   image_select_sentence: '看图选句',
-  listen_select: '听音选答',
-  listen_select_word: '听音选词',
+  listen_select: '听音选词',
   listen_spell: '听音拼词',
   listen_spell_sentence: '听音拼句',
   image_listen_spell_sentence: '看图听音拼句',

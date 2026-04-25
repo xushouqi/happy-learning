@@ -111,8 +111,7 @@ const typeStats = ref({})
 const typeShortLabels = {
   image_select_word: '图词',
   image_select_sentence: '图句',
-  listen_select: '听选',
-  listen_select_word: '听词',
+  listen_select: '听词',
   listen_spell: '拼词',
   listen_spell_sentence: '拼句',
   image_listen_spell_sentence: '图拼',

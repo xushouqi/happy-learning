@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Import Big Muzzy word card JSON into the quiz database.
 
-Generates 4 question types per episode:
+Generates 5 question types per episode:
 - image_select_word: 看图选词
 - image_select_sentence: 看图选句
-- listen_select_word: 听音选词
-- listen_spell_sentence: 听音拼句
+- listen_select: 听音选词
+- listen_spell_sentence: 听音拼句（带干扰词）
+- image_listen_spell_sentence: 看图听音拼句（带干扰词）
 """
 import json
 import os
@@ -127,45 +128,58 @@ def generate_questions_for_unit(cards):
         options = [entry["word"]] + distractors
         random.shuffle(options)
         questions.append({
-            "type": "listen_select_word",
+            "type": "listen_select",
             "answer": entry["word"],
             "options": options,
             "image_url": None,
             "audio_text": entry["word"],
         })
 
-    # 4. 听音拼句: play audio (sentence), show word buttons to assemble (no image)
+    # 4. 听音拼句: play audio (sentence), show word buttons + 1 distractor
     for entry in sentence_entries:
         sentence = entry["sentence"]
         words = sentence.split()
-        if len(words) < 2:
-            options = words[:]
-        else:
-            options = words[:]
+        # Add 1 distractor word from other sentences
+        distractor = _pick_distractors(sentence, all_sentences, 1)
+        if distractor:
+            # Pick a word from the distractor sentence
+            distractor_words = distractor[0].split()
+            random.shuffle(distractor_words)
+            extra_word = distractor_words[0] if distractor_words else None
+            if extra_word and extra_word not in words:
+                words = words + [extra_word]
+        options = words[:]
         random.shuffle(options)
         questions.append({
             "type": "listen_spell_sentence",
-            "answer": " ".join(words),
+            "answer": entry["sentence"],
             "options": options,
             "image_url": None,
             "audio_text": sentence,
+            "sentence": sentence,
         })
 
-    # 5. 看图听音拼句: show image + play audio, show word buttons to assemble
+    # 5. 看图听音拼句: show image + play audio, show word buttons + 1 distractor
     for entry in sentence_entries:
         sentence = entry["sentence"]
         words = sentence.split()
-        if len(words) < 2:
-            options = words[:]
-        else:
-            options = words[:]
+        # Add 1 distractor word from other sentences
+        distractor = _pick_distractors(sentence, all_sentences, 1)
+        if distractor:
+            distractor_words = distractor[0].split()
+            random.shuffle(distractor_words)
+            extra_word = distractor_words[0] if distractor_words else None
+            if extra_word and extra_word not in words:
+                words = words + [extra_word]
+        options = words[:]
         random.shuffle(options)
         questions.append({
             "type": "image_listen_spell_sentence",
-            "answer": " ".join(words),
+            "answer": entry["sentence"],
             "options": options,
             "image_url": entry["image_url"],
             "audio_text": sentence,
+            "sentence": sentence,
         })
 
     return questions
@@ -238,6 +252,7 @@ def main():
                         answer=q["answer"],
                         image_url=q.get("image_url"),
                         audio_text=q.get("audio_text"),
+                        sentence=q.get("sentence"),
                     )
                     db.add(question)
                     unit_type_counts[q["type"]] = unit_type_counts.get(q["type"], 0) + 1

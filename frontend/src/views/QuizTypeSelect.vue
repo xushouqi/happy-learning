@@ -63,7 +63,7 @@ const selectedTypes = ref([])
 const questionTypes = [
   { value: 'image_select_word', label: '看图选词', icon: '🖼️', desc: '看图片，选择正确的单词' },
   { value: 'image_select_sentence', label: '看图选句', icon: '🖼️📝', desc: '看图片，选择正确的句子' },
-  { value: 'listen_select_word', label: '听音选词', icon: '🔊', desc: '听声音，选择正确的单词' },
+  { value: 'listen_select', label: '听音选词', icon: '🔊', desc: '听声音，选择正确的单词' },
   { value: 'listen_spell_sentence', label: '听音拼句', icon: '🔊🧩', desc: '听声音，拼出正确的句子' },
   { value: 'image_listen_spell_sentence', label: '看图听音拼句', icon: '🖼️🔊🧩', desc: '看图听音，拼出正确句子' },
   { value: 'mixed', label: '综合题', icon: '🎯', desc: '混合所有题型随机练习' },

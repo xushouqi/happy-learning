@@ -75,7 +75,7 @@
           class="mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-base font-semibold hover:bg-gray-300 transition-all"
         >✕ 清除重排</button>
         <button
-          v-if="builtSentenceWords.length === sentenceTiles.length && !answered"
+          v-if="builtSentenceWords.length === answerWordCount && !answered"
           @click="submitSentence"
           class="mt-3 px-6 py-2 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
         >确认 ✓</button>
@@ -85,7 +85,7 @@
       <div v-if="currentQuestion.type === 'image_listen_spell_sentence'" class="text-center mb-4">
         <img
           v-if="currentQuestion.image_url"
-          :src="'/' + currentQuestion.image_url"
+          :src="currentQuestion.image_url.startsWith('http') ? currentQuestion.image_url : '/' + currentQuestion.image_url"
           :alt="questionPrompt"
           class="w-40 h-40 object-cover rounded-xl mx-auto border-2 border-gray-200 mb-3"
           @load="imageLoaded = true"
@@ -126,7 +126,7 @@
           class="mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-base font-semibold hover:bg-gray-300 transition-all"
         >✕ 清除重排</button>
         <button
-          v-if="builtSentenceWords.length === sentenceTiles.length && !answered"
+          v-if="builtSentenceWords.length === answerWordCount && !answered"
           @click="submitSentence"
           class="mt-3 px-6 py-2 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
         >确认 ✓</button>
@@ -151,8 +151,8 @@
         </p>
       </div>
 
-      <!-- Audio button for listen_select_word -->
-      <div v-if="currentQuestion.type === 'listen_select_word'" class="text-center mb-4">
+      <!-- Audio button for listen_select -->
+      <div v-if="currentQuestion.type === 'listen_select'" class="text-center mb-4">
         <button @click="playAudio" class="text-5xl hover:scale-110 transition-transform">🔊</button>
       </div>
 
@@ -194,8 +194,8 @@
         >确认 ✓</button>
       </div>
 
-      <!-- Options (listen_select_word, image_select_word, image_select_sentence) -->
-      <div v-if="['listen_select_word', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
+      <!-- Options (listen_select, image_select_word, image_select_sentence) -->
+      <div v-if="['listen_select', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
         <button
           v-for="(option, idx) in currentQuestion.options"
           :key="option"
@@ -282,6 +282,12 @@ const scrambleTiles = computed(() => {
     attempts++
   }
   return shuffled
+})
+
+const answerWordCount = computed(() => {
+  const q = currentQuestion.value
+  if (!q || !['listen_spell_sentence', 'image_listen_spell_sentence'].includes(q.type)) return 0
+  return q.answer.split(' ').length
 })
 
 const sentenceTiles = computed(() => {
@@ -374,7 +380,7 @@ const questionPrompt = computed(() => {
   const q = currentQuestion.value
   if (!q) return ''
   switch (q.type) {
-    case 'listen_select_word': return '听一听，选一选！'
+    case 'listen_select': return '听一听，选一选！'
     case 'image_select_word': return '看图选词！'
     case 'image_select_sentence': return '看图选句子！'
     case 'listen_spell': return '拼一拼！'
@@ -436,7 +442,7 @@ const playAudio = async () => {
 // Auto-play audio when question changes
 watch(currentQuestion, (q) => {
   if (!q) return
-  if (['listen_select_word', 'listen_spell', 'listen_spell_sentence', 'image_listen_spell_sentence'].includes(q.type)) {
+  if (['listen_select', 'listen_spell', 'listen_spell_sentence', 'image_listen_spell_sentence'].includes(q.type)) {
     setTimeout(() => playAudio(), 300)
   }
   imageLoaded.value = true

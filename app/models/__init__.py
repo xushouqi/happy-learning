@@ -64,7 +64,7 @@ class Question(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     textbook_id = Column(Integer, ForeignKey("textbooks.id"), nullable=False)
     unit_id = Column(Integer, ForeignKey("units.id"), nullable=False)
-    type = Column(String, nullable=False)  # image_select_word, image_select_sentence, listen_select, listen_spell, listen_spell_sentence
+    type = Column(String, nullable=False)  # image_select_word, image_select_sentence, listen_select, listen_spell, listen_spell_sentence, image_listen_spell_sentence
     difficulty = Column(Integer, default=1)  # 1-3
     options = Column(JSON, nullable=False)
     answer = Column(String, nullable=False)
