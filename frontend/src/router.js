@@ -11,6 +11,8 @@ const routes = [
   { path: '/quiz-type/:unitId', name: 'quizType', component: () => import('./views/QuizTypeSelect.vue') },
   { path: '/quiz/:unitId', name: 'quiz', component: () => import('./views/Quiz.vue') },
   { path: '/results', name: 'results', component: () => import('./views/Results.vue') },
+  { path: '/speech-practice', name: 'speechPractice', component: () => import('./views/SpeechPractice.vue') },
+  { path: '/speech-quiz/:unitId', name: 'speechQuiz', component: () => import('./views/SpeechQuiz.vue') },
 ]
 
 const router = createRouter({

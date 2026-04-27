@@ -124,6 +124,57 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
     return db_question
 
 
+@router.get("/speech-practice/{unit_id}")
+def get_speech_practice_questions(
+    unit_id: int,
+    practice_type: str = Query(...),  # listen_read_sentence or image_read_word
+    db: Session = Depends(get_db),
+):
+    """Get questions for speech practice.
+
+    listen_read_sentence: from image_listen_spell_sentence or listen_spell_sentence questions
+    image_read_word: from image_select_word questions
+    """
+    result = []
+
+    if practice_type == "listen_read_sentence":
+        # Get questions from image_listen_spell_sentence or listen_spell_sentence
+        questions = (
+            db.query(Question)
+            .filter(
+                Question.unit_id == unit_id,
+                Question.type.in_(["image_listen_spell_sentence", "listen_spell_sentence"])
+            )
+            .all()
+        )
+        for q in questions:
+            result.append({
+                "id": q.id,
+                "type": "listen_read_sentence",
+                "target_text": q.answer,
+                "audio_text": q.audio_text,
+                "image_url": q.image_url if q.type == "image_listen_spell_sentence" else None,
+            })
+
+    elif practice_type == "image_read_word":
+        # Get questions from image_select_word
+        questions = (
+            db.query(Question)
+            .filter(Question.unit_id == unit_id, Question.type == "image_select_word")
+            .all()
+        )
+        for q in questions:
+            result.append({
+                "id": q.id,
+                "type": "image_read_word",
+                "target_text": q.answer,
+                "image_url": q.image_url,
+            })
+
+    random.shuffle(result)
+    return result
+
+
 @router.get("/{question_id}", response_model=QuestionResponse)
 def get_question(question_id: int, db: Session = Depends(get_db)):
     question = db.query(Question).filter(Question.id == question_id).first()

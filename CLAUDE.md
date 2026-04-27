@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **TTS**: Browser Web Speech API + edge-tts for server-side
 
 ## Build & Run
+- 重启服务服务时不要关闭其他端口的服务，仅重启后端9000端口，前端5173端口！
+
 ```bash
 # Backend (port 9000)
 cd /home/xsq/happy-learning && python3 -m uvicorn app.main:app --port 9000
@@ -17,21 +19,21 @@ cd /home/xsq/happy-learning/frontend && npm run dev
 
 # Frontend build (served by FastAPI in production)
 cd /home/xsq/happy-learning/frontend && npm run build
-
-# Seed/import data
-PYTHONPATH=. python3 scripts/seed_data.py
-PYTHONPATH=. python3 scripts/import_muzzy_cards.py
-PYTHONPATH=. python3 scripts/import_yakka_dee.py
-PYTHONPATH=. python3 scripts/import_nc_english.py
 ```
+
+## Content Scripts
+- `scripts/generate_questions.py` — 生成 Big Muzzy 题库（6种题型），从 MUZZY_DATA 配置生成
+- `scripts/import_muzzy_cards.py` — 导入 Muzzy 单词图卡到数据库
+- `scripts/import_yakka_dee.py` — 导入 Yakka Dee 单词图卡
+- `scripts/import_nc_english.py` — 导入新概念英语内容
 
 ## Architecture
 
 ### Data Model
 - **Textbook** → contains Units + VocabWords
 - **Unit** → contains Questions + VocabWords, has video_path
-- **Question** → 5 types: `image_select_word`, `image_select_sentence`, `listen_select`, `listen_spell`, `listen_spell_sentence`
-- **User** → has Scores, DailyProgress, UnitProgress
+- **Question** → 6 types: `image_select_word`, `image_select_sentence`, `listen_select`, `listen_spell`, `listen_spell_sentence`, `image_listen_spell_sentence`
+- **User** → has avatar (emoji), Scores, DailyProgress, UnitProgress
 - **VocabWord** → word with image_path and example_sentence
 
 ### Static Mounts

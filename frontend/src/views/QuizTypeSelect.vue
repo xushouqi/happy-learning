@@ -24,7 +24,7 @@
           <span class="text-3xl mb-2 block">{{ type.icon }}</span>
           <span class="font-semibold text-gray-800">{{ type.label }}</span>
           <span class="text-xs text-gray-500 mt-1 block">{{ type.desc }}</span>
-          <span v-if="type.value !== 'mixed' && !availableTypes.includes(type.value)" class="text-xs text-red-500 mt-1 block">暂无题目</span>
+          <span v-if="!availableTypes.includes(type.value)" class="text-xs text-red-500 mt-1 block">暂无题目</span>
         </button>
       </div>
 
@@ -66,6 +66,8 @@ const questionTypes = [
   { value: 'listen_select', label: '听音选词', icon: '🔊', desc: '听声音，选择正确的单词' },
   { value: 'listen_spell_sentence', label: '听音拼句', icon: '🔊🧩', desc: '听声音，拼出正确的句子' },
   { value: 'image_listen_spell_sentence', label: '看图听音拼句', icon: '🖼️🔊🧩', desc: '看图听音，拼出正确句子' },
+  { value: 'listen_read_sentence', label: '听音读句', icon: '🔊🎤', desc: '听声音，朗读句子', isSpeech: true },
+  { value: 'image_read_word', label: '看图读词', icon: '🖼️🎤', desc: '看图片，朗读单词', isSpeech: true },
   { value: 'mixed', label: '综合题', icon: '🎯', desc: '混合所有题型随机练习' },
 ]
 
@@ -77,7 +79,9 @@ const toggleType = (type) => {
   if (selectedTypes.value.includes('mixed')) {
     selectedTypes.value = []
   }
-  if (!availableTypes.value.includes(type)) return
+  // For speech types, always allow selection (check availability separately)
+  const typeInfo = questionTypes.find(t => t.value === type)
+  if (!typeInfo?.isSpeech && !availableTypes.value.includes(type)) return
   const idx = selectedTypes.value.indexOf(type)
   if (idx > -1) {
     selectedTypes.value.splice(idx, 1)
@@ -88,11 +92,31 @@ const toggleType = (type) => {
 
 const startQuiz = () => {
   if (selectedTypes.value.length === 0) return
-  const types = selectedTypes.value.includes('mixed') ? null : selectedTypes.value.join(',')
-  router.push({
-    path: `/quiz/${route.params.unitId}`,
-    query: types ? { types } : {},
+
+  // Check if only speech types are selected
+  const speechTypes = selectedTypes.value.filter(t => {
+    const typeInfo = questionTypes.find(qt => qt.value === t)
+    return typeInfo?.isSpeech
   })
+
+  if (speechTypes.length === 1) {
+    // Single speech type - go to speech quiz
+    router.push({
+      path: `/speech-quiz/${route.params.unitId}`,
+      query: { type: speechTypes[0] },
+    })
+  } else if (speechTypes.length > 1) {
+    // Multiple speech types - error, only one at a time
+    alert('发音练习只能选择一种题型')
+    return
+  } else {
+    // Regular quiz
+    const types = selectedTypes.value.includes('mixed') ? null : selectedTypes.value.join(',')
+    router.push({
+      path: `/quiz/${route.params.unitId}`,
+      query: types ? { types } : {},
+    })
+  }
 }
 
 onMounted(async () => {
@@ -102,7 +126,13 @@ onMounted(async () => {
       textbooksApi.list(),
     ])
     availableTypes.value = typesRes.data.types || []
-    // 不默认选中任何题型，让用户自己选择
+    // Add speech types availability based on source types
+    if (availableTypes.value.includes('image_listen_spell_sentence') || availableTypes.value.includes('listen_spell_sentence')) {
+      availableTypes.value.push('listen_read_sentence')
+    }
+    if (availableTypes.value.includes('image_select_word')) {
+      availableTypes.value.push('image_read_word')
+    }
     selectedTypes.value = []
 
     const unitId = parseInt(route.params.unitId)
