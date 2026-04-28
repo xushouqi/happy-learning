@@ -62,7 +62,7 @@
             @click="addWord(word, idx)"
             :disabled="wordTileUsed[idx] || answered"
             :class="[
-              'px-4 py-2 rounded-lg text-lg font-semibold transition-all border-2',
+              'px-5 py-2.5 rounded-lg text-xl font-semibold transition-all border-2',
               wordTileUsed[idx]
                 ? 'border-gray-100 bg-gray-100 text-gray-300 opacity-30'
                 : 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50',
@@ -83,18 +83,20 @@
 
       <!-- image_listen_spell_sentence: image + audio + word ordering -->
       <div v-if="currentQuestion.type === 'image_listen_spell_sentence'" class="text-center mb-4">
-        <img
-          v-if="currentQuestion.image_url"
-          :src="currentQuestion.image_url.startsWith('http') ? currentQuestion.image_url : '/' + currentQuestion.image_url"
-          :alt="questionPrompt"
-          class="w-40 h-40 object-cover rounded-xl mx-auto border-2 border-gray-200 mb-3"
-          @load="imageLoaded = true"
-          @error="imageLoaded = false"
-        />
-        <div v-if="!imageLoaded && currentQuestion.image_url" class="w-40 h-40 flex items-center justify-center mx-auto bg-gray-100 rounded-xl border-2 border-gray-200 mb-3">
-          <span class="text-4xl">🖼️</span>
+        <div class="flex items-center justify-center gap-4 mb-4">
+          <img
+            v-if="currentQuestion.image_url"
+            :src="currentQuestion.image_url.startsWith('http') ? currentQuestion.image_url : '/' + currentQuestion.image_url"
+            :alt="questionPrompt"
+            class="w-40 h-40 object-cover rounded-xl border-2 border-gray-200"
+            @load="imageLoaded = true"
+            @error="imageLoaded = false"
+          />
+          <div v-if="!imageLoaded && currentQuestion.image_url" class="w-40 h-40 flex items-center justify-center bg-gray-100 rounded-xl border-2 border-gray-200">
+            <span class="text-4xl">🖼️</span>
+          </div>
+          <button @click="playAudio" class="text-4xl hover:scale-110 transition-transform">🔊</button>
         </div>
-        <button @click="playAudio" class="text-4xl hover:scale-110 transition-transform mb-3">🔊</button>
         <p class="text-gray-500 mb-3">看图听音，点击单词排列成正确的句子</p>
         <!-- Built sentence -->
         <div class="flex flex-wrap justify-center gap-2 mb-4 min-h-[48px] p-2 bg-gray-50 rounded-xl">
@@ -113,7 +115,7 @@
             @click="addWord(word, idx)"
             :disabled="wordTileUsed[idx] || answered"
             :class="[
-              'px-4 py-2 rounded-lg text-lg font-semibold transition-all border-2',
+              'px-5 py-2.5 rounded-lg text-xl font-semibold transition-all border-2',
               wordTileUsed[idx]
                 ? 'border-gray-100 bg-gray-100 text-gray-300 opacity-30'
                 : 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50',
@@ -202,7 +204,7 @@
           @click="selectAnswer(option)"
           :disabled="answered"
           :class="[
-            'p-4 rounded-xl text-lg font-semibold transition-all border-2',
+            'p-5 rounded-xl text-xl font-semibold transition-all border-2',
             getOptionClass(option),
           ]"
         >
@@ -212,23 +214,22 @@
 
       <!-- Feedback -->
       <div v-if="feedback" class="mt-4 text-center">
-        <span :class="['text-4xl', isCorrect ? 'animate-bounce' : 'animate-shake']">
-          {{ isCorrect ? '✅' : '❌' }}
-        </span>
-        <p :class="['text-xl mt-2', isCorrect ? 'text-green-600' : 'text-red-500']">
-          {{ isCorrect ? '太棒了！' : `正确答案: ${currentQuestion.answer}` }}
-        </p>
+        <div v-if="!isCorrect" class="flex items-center justify-center gap-3">
+          <span class="text-4xl animate-shake">❌</span>
+          <p class="text-xl text-red-500">正确答案: {{ currentQuestion.answer }}</p>
+          <button
+            @click="nextQuestion"
+            class="px-6 py-2 bg-accent text-gray-800 rounded-full text-base font-bold hover:bg-opacity-80 transition-all"
+          >
+            {{ current + 1 < questions.length ? '下一题 →' : '查看成绩 🎉' }}
+          </button>
+        </div>
+        <div v-else>
+          <span class="text-4xl animate-bounce">✅</span>
+          <p class="text-xl mt-2 text-green-600">太棒了！</p>
+        </div>
       </div>
     </div>
-
-    <!-- Next Button -->
-    <button
-      v-if="answered"
-      @click="nextQuestion"
-      class="mt-6 px-8 py-3 bg-accent text-gray-800 rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
-    >
-      {{ current + 1 < questions.length ? '下一题 →' : '查看成绩 🎉' }}
-    </button>
   </div>
 </template>
 
