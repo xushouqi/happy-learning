@@ -50,7 +50,7 @@
           <span
             v-for="(word, idx) in builtSentenceWords"
             :key="'built-' + idx"
-            class="px-3 py-1 bg-primary text-white rounded-lg text-base font-semibold"
+            class="px-5 py-2 bg-primary text-white rounded-lg text-xl font-semibold"
           >{{ word }}</span>
           <span v-if="builtSentenceWords.length === 0" class="text-gray-300 text-xl">?</span>
         </div>
@@ -103,7 +103,7 @@
           <span
             v-for="(word, idx) in builtSentenceWords"
             :key="'built-' + idx"
-            class="px-3 py-1 bg-primary text-white rounded-lg text-base font-semibold"
+            class="px-5 py-2 bg-primary text-white rounded-lg text-xl font-semibold"
           >{{ word }}</span>
           <span v-if="builtSentenceWords.length === 0" class="text-gray-300 text-xl">?</span>
         </div>
