@@ -24,7 +24,7 @@
           <span class="text-3xl mb-2 block">{{ type.icon }}</span>
           <span class="font-semibold text-gray-800">{{ type.label }}</span>
           <span class="text-xs text-gray-500 mt-1 block">{{ type.desc }}</span>
-          <span v-if="!availableTypes.includes(type.value)" class="text-xs text-red-500 mt-1 block">暂无题目</span>
+          <span v-if="type.value !== 'mixed' && !availableTypes.includes(type.value)" class="text-xs text-red-500 mt-1 block">暂无题目</span>
         </button>
       </div>
 
@@ -73,6 +73,7 @@ const questionTypes = [
 
 const toggleType = (type) => {
   if (type === 'mixed') {
+    if (availableTypes.value.length === 0) return
     selectedTypes.value = ['mixed']
     return
   }
