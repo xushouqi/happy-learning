@@ -4,7 +4,7 @@ import os
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
-VIDEO_BASE = "/home/xsq/happy-learning/data/videos"
+VIDEO_BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "videos")
 
 
 @router.get("/video/{filename}")

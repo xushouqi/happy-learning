@@ -77,3 +77,8 @@ cd /home/xsq/happy-learning/frontend && npm run build
 - Use planning-with-files skill for multi-step tasks
 - Phase-based development tracked in task_plan.md
 - Content import scripts in `scripts/` for different sources (Muzzy, Yakka Dee, NC English)
+
+## Deployment
+- Linux 生产部署使用 systemd 服务（见上方 Systemd Services 部分）
+- Windows Server 2022 部署使用 NSSM + IIS 反向代理，详见 `DEPLOY_WINDOWS.md`
+- 所有路径已改为相对路径或基于 `__file__` 的动态路径，跨平台兼容
