@@ -19,6 +19,10 @@ sudo systemctl [start|stop|restart|status] happy-learning-backend
 # Frontend (port 5173)
 sudo systemctl [start|stop|restart|status] happy-learning-frontend
 
+# Ngrok tunnel (forward 5173 to public)
+sudo systemctl [start|stop|restart|status] happy-learning-ngrok
+# Tunnel URL: curl -s http://localhost:4040/api/tunnels | python3 -c "import sys,json; d=json.load(sys.stdin); [print(t['public_url']) for t in d['tunnels']]"
+
 # Service files: /etc/systemd/system/happy-learning-{backend,frontend}.service
 ```
 
