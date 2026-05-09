@@ -8,8 +8,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **TTS**: Browser Web Speech API + edge-tts for server-side
 
 ## Build & Run
-- 重启服务服务时不要关闭其他端口的服务，仅重启后端9000端口，前端5173端口！
 
+### Systemd Services (production / auto-start)
+Both services are system-level systemd services, running as user `xsq`:
+
+```bash
+# Backend (port 9000)
+sudo systemctl [start|stop|restart|status] happy-learning-backend
+
+# Frontend (port 5173)
+sudo systemctl [start|stop|restart|status] happy-learning-frontend
+
+# Service files: /etc/systemd/system/happy-learning-{backend,frontend}.service
+```
+
+> 重启服务时不要关闭其他端口的服务，仅重启后端 9000 端口或前端 5173 端口。
+
+### Manual Run (dev / debugging)
 ```bash
 # Backend (port 9000)
 cd /home/xsq/happy-learning && python3 -m uvicorn app.main:app --port 9000
