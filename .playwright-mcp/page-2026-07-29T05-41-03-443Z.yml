@@ -1,0 +1,45 @@
+- generic [ref=e14]:
+  - banner [ref=e15]:
+    - button "🏠" [ref=e16] [cursor=pointer]
+    - heading "下午好！" [level=1] [ref=e17]
+    - generic [ref=e18]:
+      - button "📝 错题" [ref=e19] [cursor=pointer]:
+        - generic [ref=e20]: 📝
+        - generic [ref=e21]: 错题
+      - button "📅 日历" [ref=e22] [cursor=pointer]:
+        - generic [ref=e23]: 📅
+        - generic [ref=e24]: 日历
+      - button "📊 进度" [ref=e25] [cursor=pointer]:
+        - generic [ref=e26]: 📊
+        - generic [ref=e27]: 进度
+  - generic [ref=e28]:
+    - heading "今日挑战" [level=2] [ref=e29]
+    - paragraph [ref=e30]: 完成一个单元的学习，赢取星星吧！
+    - button "开始学习 →" [ref=e31] [cursor=pointer]
+  - heading "选择教材" [level=2] [ref=e32]
+  - generic [ref=e33]:
+    - generic [ref=e34] [cursor=pointer]:
+      - generic [ref=e35]: 🔤
+      - heading "Oxford Phonics World" [level=3] [ref=e36]
+      - paragraph [ref=e37]: 5 个单元
+    - generic [ref=e39] [cursor=pointer]:
+      - generic [ref=e40]: 🐻
+      - heading "Big Muzzy" [level=3] [ref=e41]
+      - paragraph [ref=e42]: 12 个单元
+  - generic [ref=e45]:
+    - generic [ref=e46]:
+      - heading "Big Muzzy" [level=2] [ref=e47]
+      - button "✕" [ref=e48] [cursor=pointer]
+    - generic [ref=e49]:
+      - button "Unit 01" [ref=e51] [cursor=pointer]
+      - button "Unit 02" [ref=e53] [cursor=pointer]
+      - button "Unit 03" [ref=e55] [cursor=pointer]
+      - button "Unit 04" [ref=e57] [cursor=pointer]
+      - button "Unit 05" [ref=e59] [cursor=pointer]
+      - button "Unit 06" [ref=e61] [cursor=pointer]
+      - button "Unit 07" [ref=e63] [cursor=pointer]
+      - button "Unit 08" [ref=e65] [cursor=pointer]
+      - button "Unit 09" [ref=e67] [cursor=pointer]
+      - button "Unit 10" [ref=e69] [cursor=pointer]
+      - button "Unit 11" [ref=e71] [cursor=pointer]
+      - button "Unit 12" [ref=e73] [cursor=pointer]

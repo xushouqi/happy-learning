@@ -1,0 +1,16 @@
+- generic [ref=e112]:
+  - banner [ref=e113]:
+    - button "←" [ref=e114] [cursor=pointer]
+    - generic [ref=e115]: 第 1 / 58 题
+    - generic [ref=e116]: ⭐ 0
+  - generic [ref=e119]:
+    - heading "看图选词！" [level=2] [ref=e120]
+    - generic [ref=e121]:
+      - img "看图选词！" [ref=e122]
+      - generic [ref=e123]: computer
+      - paragraph [ref=e125]: I've got a Computer.
+    - generic [ref=e126]:
+      - button "computer" [ref=e127] [cursor=pointer]
+      - button "seven" [ref=e128] [cursor=pointer]
+      - button "motorcycle" [ref=e129] [cursor=pointer]
+      - button "four" [ref=e130] [cursor=pointer]

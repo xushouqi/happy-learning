@@ -1,0 +1,11 @@
+- generic [ref=e3]:
+  - heading "快乐学英语" [level=1] [ref=e4]
+  - paragraph [ref=e5]: 选择你的头像开始学习吧！
+  - generic [ref=e6]:
+    - button "🦄 Chloe" [ref=e7] [cursor=pointer]:
+      - generic [ref=e8]: 🦄
+      - generic [ref=e9]: Chloe
+    - button "🐰 Luna" [ref=e10] [cursor=pointer]:
+      - generic [ref=e11]: 🐰
+      - generic [ref=e12]: Luna
+  - button "+ 添加新用户" [ref=e13] [cursor=pointer]
