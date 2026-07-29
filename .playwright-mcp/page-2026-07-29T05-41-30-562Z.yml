@@ -1,0 +1,46 @@
+- generic [ref=e74]:
+  - banner [ref=e75]:
+    - button "←" [ref=e76] [cursor=pointer]
+    - heading "Unit 01" [level=1] [ref=e77]
+    - generic [ref=e78]: 选择题型
+  - generic [ref=e79]:
+    - heading "选择你要练习的题型" [level=2] [ref=e80]
+    - generic [ref=e81]:
+      - button "🖼️ 看图选词 看图片，选择正确的单词" [active] [ref=e82] [cursor=pointer]:
+        - generic [ref=e83]: 🖼️
+        - text: 看图选词
+        - generic [ref=e84]: 看图片，选择正确的单词
+      - button "🖼️📝 看图选句 看图片，选择正确的句子" [ref=e85] [cursor=pointer]:
+        - generic [ref=e86]: 🖼️📝
+        - text: 看图选句
+        - generic [ref=e87]: 看图片，选择正确的句子
+      - button "🔊 听音选词 听声音，选择正确的单词 暂无题目" [ref=e88] [cursor=pointer]:
+        - generic [ref=e89]: 🔊
+        - text: 听音选词
+        - generic [ref=e90]: 听声音，选择正确的单词
+        - generic [ref=e91]: 暂无题目
+      - button "🔊🧩 听音拼句 听声音，拼出正确的句子 暂无题目" [ref=e92] [cursor=pointer]:
+        - generic [ref=e93]: 🔊🧩
+        - text: 听音拼句
+        - generic [ref=e94]: 听声音，拼出正确的句子
+        - generic [ref=e95]: 暂无题目
+      - button "🖼️🔊🧩 看图听音拼句 看图听音，拼出正确句子 暂无题目" [ref=e96] [cursor=pointer]:
+        - generic [ref=e97]: 🖼️🔊🧩
+        - text: 看图听音拼句
+        - generic [ref=e98]: 看图听音，拼出正确句子
+        - generic [ref=e99]: 暂无题目
+      - button "🔊🎤 听音读句 听声音，朗读句子 暂无题目" [ref=e100] [cursor=pointer]:
+        - generic [ref=e101]: 🔊🎤
+        - text: 听音读句
+        - generic [ref=e102]: 听声音，朗读句子
+        - generic [ref=e103]: 暂无题目
+      - button "🖼️🎤 看图读词 看图片，朗读单词" [ref=e104] [cursor=pointer]:
+        - generic [ref=e105]: 🖼️🎤
+        - text: 看图读词
+        - generic [ref=e106]: 看图片，朗读单词
+      - button "🎯 综合题 混合所有题型随机练习" [ref=e107] [cursor=pointer]:
+        - generic [ref=e108]: 🎯
+        - text: 综合题
+        - generic [ref=e109]: 混合所有题型随机练习
+    - generic [ref=e110]: 已选择 1 种题型
+    - button "开始练习 →" [ref=e111] [cursor=pointer]

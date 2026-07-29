@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from app.database import SessionLocal
 from app.models import Textbook, Unit, Question
 
-APKG_PATH = "/home/xsq/.openclaw/workspace/big-muzzy-extract/anki_output_v3/Big_Muzzy_单词图卡.apkg"
-IMAGE_BASE = "/home/xsq/happy-learning/data/muzzy_images"
+APKG_PATH = "/mnt/f/1.英语启蒙/Big Muzzy 玛泽的故事/07、单词图卡可打印/Big_Muzzy_单词图卡.apkg"
+IMAGE_BASE = "/home/xsq/happy-learning/data/muzzy_word_cards"
 
 
 def extract_anki_media():
@@ -127,7 +127,7 @@ def generate_questions(items):
             'type': 'image_select_word',
             'answer': item['word'],
             'options': options,
-            'image_url': f"muzzy_images/{section}/{item['image']}",
+            'image_url': f"muzzy_word_cards/{section}/{item['image']}",
             'audio_text': item['word'],
             'sentence': item['sentence'] if item['sentence'] else None,
             'section': section,
@@ -154,7 +154,7 @@ def generate_questions(items):
             'type': 'image_select_sentence',
             'answer': item['sentence'],
             'options': options,
-            'image_url': f"muzzy_images/{section}/{item['image']}",
+            'image_url': f"muzzy_word_cards/{section}/{item['image']}",
             'audio_text': item['sentence'],
             'sentence': None,
             'section': section,
