@@ -9,24 +9,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run
 
-### Systemd Services (production / auto-start)
-Both services are system-level systemd services, running as user `xsq`:
+### Systemd Service (production / auto-start)
+Single system-level service, running as user `xsq`. Backend serves both the API (port 9000) and the production frontend (`frontend/dist/`, built by `npm run build`).
 
 ```bash
-# Backend (port 9000)
 sudo systemctl [start|stop|restart|status] happy-learning-backend
-
-# Frontend (port 5173)
-sudo systemctl [start|stop|restart|status] happy-learning-frontend
-
-# Ngrok tunnel (forward 5173 to public)
-sudo systemctl [start|stop|restart|status] happy-learning-ngrok
-# Tunnel URL: curl -s http://localhost:4040/api/tunnels | python3 -c "import sys,json; d=json.load(sys.stdin); [print(t['public_url']) for t in d['tunnels']]"
-
-# Service files: /etc/systemd/system/happy-learning-{backend,frontend}.service
+# Service file: /etc/systemd/system/happy-learning-backend.service
+# Source template: deploy/happy-learning-backend.service
 ```
 
-> 重启服务时不要关闭其他端口的服务，仅重启后端 9000 端口或前端 5173 端口。
+> 前端静态资源由 FastAPI 直接 serve，不需要单独的 frontend 服务。
 
 ### Manual Run (dev / debugging)
 ```bash
@@ -142,6 +134,7 @@ python3 scripts/import_muzzy_from_docx.py
 - `progress` — daily/unit progress tracking
 - `media` — video streaming from `data/videos/`
 - `tts` — text-to-speech endpoint
+- `GET /api/health` — 健康检查，返回 `{"status": "ok"}`（路由注册在 SPA catch-all 之前）
 
 ## Code Style
 - Python: PEP 8, snake_case functions/variables
@@ -154,6 +147,6 @@ python3 scripts/import_muzzy_from_docx.py
 - Content import scripts in `scripts/` for different sources (Muzzy, Yakka Dee, NC English)
 
 ## Deployment
-- Linux 生产部署使用 systemd 服务（见上方 Systemd Services 部分）
+- Linux 生产部署使用 systemd 服务（见上方 Systemd Service 部分）
 - Windows Server 2022 部署使用 NSSM + IIS 反向代理，详见 `DEPLOY_WINDOWS.md`
 - 所有路径已改为相对路径或基于 `__file__` 的动态路径，跨平台兼容

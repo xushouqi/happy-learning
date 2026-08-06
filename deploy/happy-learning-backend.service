@@ -1,0 +1,15 @@
+[Unit]
+Description=Happy Learning Backend (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=xsq
+WorkingDirectory=/home/xsq/happy-learning
+Environment=PATH=/home/xsq/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/xsq/.local/bin/uvicorn app.main:app --host 0.0.0.0 --port 9000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

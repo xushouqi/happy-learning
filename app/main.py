@@ -42,8 +42,13 @@ try:
 except RuntimeError:
     pass  # yakka_dee directory not present
 
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
 # SPA fallback: serve static files + index.html for SPA routing
 # This replaces StaticFiles mount to support Vue Router history mode
+# MUST be registered last — otherwise it shadows all subsequent routes
 @app.get("/{full_path:path}")
 def spa_fallback(full_path: str):
     import os
@@ -52,7 +57,3 @@ def spa_fallback(full_path: str):
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     return FileResponse(os.path.join(dist_dir, "index.html"))
-
-@app.get("/api/health")
-def health_check():
-    return {"status": "ok"}
