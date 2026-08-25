@@ -16,14 +16,14 @@ export async function load() {
 
 // ---------- 本地存储(带内存降级,防 WebView localStorage 异常) ----------
 const memoryStore = {}
-function safeGet(key) {
+export function safeGet(key) {
   try {
     return localStorage.getItem(key)
   } catch {
     return memoryStore[key] != null ? memoryStore[key] : null
   }
 }
-function safeSet(key, value) {
+export function safeSet(key, value) {
   try {
     localStorage.setItem(key, value)
   } catch {

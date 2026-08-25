@@ -418,18 +418,9 @@ const praise = computed(() => {
 
 const getUserId = () => parseInt(localStorage.getItem('userId'))
 
-// ---------- 发音 ----------
+// ---------- 发音(统一模块:原生 TTS 插件 / Web speechSynthesis) ----------
 const speak = (text) => {
-  if (!text || !('speechSynthesis' in window)) return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'en-US'
-  u.rate = 0.8
-  u.pitch = 1.05
-  const voices = window.speechSynthesis.getVoices()
-  const v = voices.find((x) => x.lang.toLowerCase().startsWith('en') && /microsoft|google|samantha|aria/i.test(x.name))
-  if (v) u.voice = v
-  window.speechSynthesis.speak(u)
+  import('../lib/tts').then((m) => m.speak(text))
 }
 
 const playCurrent = () => speak(currentQuestion.value.audio || currentQuestion.value.target)
@@ -615,7 +606,7 @@ const finishLesson = async () => {
 }
 
 const goBack = () => {
-  window.speechSynthesis?.cancel()
+  import('../lib/tts').then((m) => m.stopSpeaking())
   router.push(`/courses/${courseId}`)
 }
 

@@ -56,6 +56,16 @@ dump("courses.json", courses)
 # 单词(用于内容组装时查图)
 dump("vocab_words.json", cur.execute("SELECT id, textbook_id, unit_id, word, image_path, example_sentence FROM vocab_words").fetchall())
 
+# 题目(答题模式离线化)
+q_out = []
+for q in cur.execute(
+    "SELECT id, textbook_id, unit_id, type, difficulty, options, answer, image_url, audio_text, sentence FROM questions"
+):
+    d = dict(q)
+    d["options"] = json.loads(d["options"])
+    q_out.append(d)
+dump("questions.json", q_out)
+
 # 用户(默认用户列表)
 users = cur.execute("SELECT id, name, avatar FROM users ORDER BY id").fetchall()
 dump("users.json", users)
@@ -71,6 +81,7 @@ embedded = {
     "courses": load_json("courses.json"),
     # 键名必须与代码一致(vocabWords 驼峰):content.js 用 load().vocabWords,勿改回下划线
     "vocabWords": load_json("vocab_words.json"),
+    "questions": load_json("questions.json"),
     "users": [dict(u) for u in users],
 }
 embed_path = os.path.join("frontend", "src", "offline", "data-embedded.js")

@@ -2,6 +2,7 @@
 // 让现有 Vue 页面零改动运行在无后端环境
 
 import * as offline from './data'
+import * as quiz from './quiz'
 import { assembleLessonContent } from './content'
 
 export function installOfflineAdapter(apiInstance) {
@@ -63,12 +64,93 @@ async function route(method, url, data, params) {
     }
     return []
   }
-  // ---------- 答题模式(离线版暂不支持,优雅降级为空数据) ----------
+  // ---------- 答题模式(离线版) ----------
   if (url.startsWith('/questions')) {
-    if (url.includes('word-to-image')) return {}
+    // /questions/types/{unitId}
+    let m = url.match(/^\/questions\/types\/(\d+)/)
+    if (m) return quiz.getTypes(parseInt(m[1]))
+    // /questions/quiz/{unitId}?question_types=
+    m = url.match(/^\/questions\/quiz\/(\d+)/)
+    if (m) return quiz.getQuiz(parseInt(m[1]), params && params.question_types)
+    // /questions/by-ids?ids=
+    if (url.includes('/by-ids')) return quiz.getByIds(params && params.ids)
+    // /questions/word-to-image
+    if (url.includes('word-to-image')) return quiz.getWordToImage()
+    // /questions/speech-practice/{unitId}
+    m = url.match(/^\/questions\/speech-practice\/(\d+)/)
+    if (m) return []
+    // /questions/random
+    if (url.includes('/random')) return quiz.getRandom(params)
+    // /questions/textbook/{id}
+    m = url.match(/^\/questions\/textbook\/(\d+)/)
+    if (m) return quiz.getByTextbook(parseInt(m[1]))
+    // /questions/unit/{unitId}
+    m = url.match(/^\/questions\/unit\/(\d+)/)
+    if (m) return quiz.getByUnit(parseInt(m[1]))
+    // /questions/{id}
+    m = url.match(/^\/questions\/(\d+)/)
+    if (m) return quiz.getById(parseInt(m[1]))
     return []
   }
-  if (url.startsWith('/scores') || url.startsWith('/progress')) {
+  // ---------- 成绩 / 进度(离线版) ----------
+  if (url.startsWith('/scores')) {
+    if (url === '/scores/' && method === 'post') return quiz.recordScore(data)
+    // /scores/unit-complete (POST, query 参数)
+    if (url.includes('/unit-complete')) {
+      return quiz.recordUnitComplete({
+        user_id: params && params.user_id,
+        unit_id: params && params.unit_id,
+        score: params && params.score,
+        total: params && params.total,
+      })
+    }
+    // /scores/user/{id}/wrong-questions/quiz
+    if (url.includes('/wrong-questions/quiz')) {
+      const uid = parseInt(url.split('/')[3])
+      return quiz.wrongQuiz(uid)
+    }
+    // /scores/user/{id}/wrong-questions
+    if (url.includes('/wrong-questions')) {
+      const uid = parseInt(url.split('/')[3])
+      return quiz.wrongQuestions(uid)
+    }
+    // /scores/user/{id}/type-stats
+    if (url.includes('/type-stats')) {
+      const uid = parseInt(url.split('/')[3])
+      return quiz.typeStats(uid)
+    }
+    // /scores/user/{id}/unit/{unitId} (DELETE)
+    if (method === 'delete') {
+      const parts = url.split('/').filter(Boolean) // scores/user/{id}/unit/{unitId}
+      return quiz.clearUnit(parseInt(parts[2]), parseInt(parts[4]))
+    }
+    // /scores/user/{id}
+    const parts = url.split('/').filter(Boolean)
+    if (parts.length >= 3 && parts[0] === 'scores' && parts[1] === 'user') {
+      return quiz.listScores(parseInt(parts[2]))
+    }
+    return []
+  }
+  if (url.startsWith('/progress')) {
+    // /progress/user/{id}/textbooks
+    if (url.includes('/textbooks')) {
+      const uid = parseInt(url.split('/')[3])
+      return quiz.progressByCourse(uid)
+    }
+    // /progress/user/{id}/calendar
+    if (url.includes('/calendar')) {
+      const uid = parseInt(url.split('/')[3])
+      return quiz.progressByUser(uid)
+    }
+    // /progress/user/{id}
+    const parts = url.split('/').filter(Boolean)
+    if (parts.length >= 3 && parts[0] === 'progress' && parts[1] === 'user') {
+      return quiz.progressByUser(parseInt(parts[2]))
+    }
+    // POST /progress/
+    if (url === '/progress/' && method === 'post') {
+      return { ...data, id: 1 }
+    }
     return []
   }
   // 未知接口

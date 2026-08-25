@@ -427,17 +427,9 @@ onMounted(async () => {
 
 const playAudio = async () => {
   if (!currentQuestion.value?.audio_text) return
-  try {
-    const url = `/api/tts/speak?text=${encodeURIComponent(currentQuestion.value.audio_text)}`
-    const audio = new Audio(url)
-    await audio.play()
-  } catch {
-    // Fallback to SpeechSynthesis if TTS endpoint fails
-    const utterance = new SpeechSynthesisUtterance(currentQuestion.value.audio_text)
-    utterance.lang = 'en-US'
-    utterance.rate = 0.6
-    speechSynthesis.speak(utterance)
-  }
+  // 统一发音:原生环境走 Capacitor TTS 插件,Web 回退 speechSynthesis(原 /api/tts 离线不可用)
+  const { speak } = await import('../lib/tts')
+  speak(currentQuestion.value.audio_text, { rate: 0.6 })
 }
 
 // Auto-play audio when question changes
