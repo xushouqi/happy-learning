@@ -24,21 +24,38 @@
       </div>
     </header>
 
-    <!-- 互动课程入口 -->
-    <div class="bg-white rounded-2xl p-6 shadow-lg mb-6 border-4 border-primary bg-gradient-to-r from-white to-amber-50">
-      <div class="flex items-center gap-4">
-        <span class="text-5xl">🎓</span>
-        <div class="flex-1">
-          <h2 class="text-xl font-bold text-gray-800">互动课程</h2>
-          <p class="text-gray-600 text-sm mt-0.5">跟着 Muzzy 边玩边学,点一点、听一听、选一选</p>
+    <!-- 互动课程入口(按教材分组) -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xl font-bold text-gray-800">互动课程</h2>
+        <button @click="router.push('/courses')" class="text-sm text-primary font-semibold hover:underline">
+          全部课程 ›
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          v-for="tb in courseTextbooks"
+          :key="tb.textbook_id"
+          class="bg-white rounded-2xl p-5 shadow-md cursor-pointer hover:shadow-lg transition-all border-2 border-primary/30"
+          @click="router.push('/courses?textbook=' + tb.textbook_id)"
+        >
+          <div class="flex items-center gap-4">
+            <span class="text-4xl">{{ tb.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-bold text-gray-800">{{ tb.textbook_name }}</h3>
+              <p class="text-sm text-gray-500 mt-0.5">已完成 {{ tb.completed }} / {{ tb.total }} 节课</p>
+            </div>
+            <span class="text-2xl text-gray-300">›</span>
+          </div>
+          <div class="mt-3 bg-gray-200 rounded-full h-2.5">
+            <div class="bg-secondary h-2.5 rounded-full transition-all" :style="{ width: tb.percent + '%' }"></div>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <span class="text-xs text-gray-400">{{ tb.course_count }} 门课程</span>
+            <span class="text-sm text-amber-500 font-semibold">⭐ {{ tb.stars }}</span>
+          </div>
         </div>
       </div>
-      <button
-        @click="router.push('/courses')"
-        class="mt-4 px-6 py-3 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all animate-pulse"
-      >
-        去上课 →
-      </button>
     </div>
 
     <!-- Today's Challenge -->
@@ -111,7 +128,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { textbooks as textbooksApi, progress as progressApi, scores as scoresApi } from '../api'
+import { textbooks as textbooksApi, progress as progressApi, scores as scoresApi, courseApi } from '../api'
 
 const router = useRouter()
 const textbookList = ref([])
@@ -119,6 +136,7 @@ const selectedBook = ref(null)
 const progressData = ref([])
 const userProgress = ref([])
 const wrongCount = ref(0)
+const courseList = ref([])
 
 const currentUser = computed(() => {
   const id = localStorage.getItem('userId')
@@ -138,6 +156,34 @@ const textbookIcons = {
   3: '🐻',  // Big Muzzy
 }
 
+// 互动课程:按教材分组的入口卡片
+const courseTextbooks = computed(() => {
+  const map = new Map()
+  for (const c of courseList.value) {
+    if (!map.has(c.textbook_id)) {
+      map.set(c.textbook_id, {
+        textbook_id: c.textbook_id,
+        textbook_name: c.textbook_name || '课程',
+        icon: textbookIcons[c.textbook_id] || c.cover_emoji || '📚',
+        course_count: 0,
+        completed: 0,
+        total: 0,
+        stars: 0,
+        percent: 0,
+      })
+    }
+    const g = map.get(c.textbook_id)
+    g.course_count++
+    g.completed += c.completed_lessons || 0
+    g.total += c.lesson_count || 0
+    g.stars += c.total_stars || 0
+  }
+  for (const g of map.values()) {
+    g.percent = g.total ? Math.round((g.completed / g.total) * 100) : 0
+  }
+  return [...map.values()]
+})
+
 const recommendedUnit = computed(() => {
   if (textbookList.value.length > 0 && textbookList.value[0].units?.length > 0) {
     return textbookList.value[0].units[0]
@@ -151,6 +197,14 @@ onMounted(async () => {
     textbookList.value = res.data
   } catch {
     textbookList.value = []
+  }
+
+  // 互动课程列表(按教材分组展示入口)
+  try {
+    const res = await courseApi.list(currentUser.value?.id)
+    courseList.value = res.data
+  } catch {
+    courseList.value = []
   }
 
   if (currentUser.value?.id) {
