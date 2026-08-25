@@ -60,12 +60,134 @@
           <span v-else class="w-28 h-28 flex items-center justify-center text-5xl rounded-xl mb-2 bg-gray-100">🖼️</span>
           <span class="text-xl font-bold text-gray-800">{{ card.word }}</span>
           <span class="text-sm text-amber-600 mt-0.5">{{ card.cn }}</span>
-          <span v-if="card.sentence" class="text-xs text-gray-400 mt-1 line-clamp-2">{{ card.sentence }}</span>
+          <span v-if="card.examples" class="text-xs text-gray-500 mt-1 line-clamp-2">{{ card.examples }}</span>
+          <span v-else-if="card.sentence" class="text-xs text-gray-400 mt-1 line-clamp-2">{{ card.sentence }}</span>
         </button>
       </div>
       <div class="text-center mt-6">
         <button @click="nextStep" class="px-8 py-3 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all">
           学会啦,继续 →
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ 看动画学一学:视频点播 ============ -->
+    <div v-else-if="currentStep.type === 'video'" class="bg-white rounded-3xl p-6 shadow-lg w-full max-w-2xl">
+      <h2 class="text-2xl font-bold text-gray-800 text-center mb-1">{{ currentStep.title }}</h2>
+      <p class="text-gray-500 text-center text-sm mb-5">点字母看动画,听一听这个字母的发音 🎬</p>
+      <div class="space-y-3">
+        <div
+          v-for="(v, idx) in currentStep.videos"
+          :key="v.label"
+          class="border-2 border-gray-200 rounded-2xl overflow-hidden"
+        >
+          <button
+            @click="activeVideo = idx"
+            :class="[
+              'w-full flex items-center justify-between px-4 py-3 text-lg font-bold transition-all',
+              activeVideo === idx ? 'bg-primary text-white' : 'bg-gray-50 text-gray-700 hover:bg-pink-50',
+            ]"
+          >
+            <span>🔤 字母 {{ v.label }}</span>
+            <span>{{ activeVideo === idx ? '⏹' : '▶' }}</span>
+          </button>
+          <video
+            v-if="activeVideo === idx"
+            :key="v.url"
+            class="w-full"
+            controls
+            autoplay
+            :src="v.url"
+          >你的浏览器不支持视频播放</video>
+        </div>
+      </div>
+      <div class="text-center mt-6">
+        <button @click="nextStep" class="px-8 py-3 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all">
+          看完啦,继续 →
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ 听一听,选字母 ============ -->
+    <div v-else-if="currentStep.type === 'listen_letter'" class="bg-white rounded-3xl p-6 shadow-lg w-full max-w-2xl">
+      <h2 class="text-2xl font-bold text-gray-800 text-center mb-1">{{ currentStep.title }}</h2>
+      <p class="text-gray-500 text-center text-sm mb-4">第 {{ listenIndex + 1 }} / {{ currentStep.questions.length }} 题</p>
+      <div class="text-center mb-5">
+        <button @click="playCurrent" class="text-6xl hover:scale-110 active:scale-95 transition-transform" aria-label="播放发音">🔊</button>
+        <p class="text-sm text-gray-400 mt-1">听单词,选出开头的字母</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <button
+          v-for="(opt, idx) in currentQuestion.options"
+          :key="idx"
+          @click="answerLetter(opt)"
+          :disabled="listenAnswered"
+          :class="[
+            'p-6 rounded-2xl text-4xl font-bold border-2 transition-all',
+            letterOptionClass(opt),
+          ]"
+        >
+          {{ opt }}
+        </button>
+      </div>
+      <div v-if="listenFeedback === 'right'" class="mt-4 text-center text-2xl animate-bounce">✅ 太棒了!</div>
+      <div v-else-if="listenFeedback === 'wrong'" class="mt-4 text-center text-2xl text-red-500 animate-shake">❌ 再试一次!</div>
+      <div class="text-center mt-4">
+        <button v-if="listenDone" @click="nextStep" class="px-8 py-3 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all">
+          下一关 →
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ 拼一拼:听音拼词 ============ -->
+    <div v-else-if="currentStep.type === 'spell'" class="bg-white rounded-3xl p-6 shadow-lg w-full max-w-2xl">
+      <h2 class="text-2xl font-bold text-gray-800 text-center mb-1">{{ currentStep.title }}</h2>
+      <p class="text-gray-500 text-center text-sm mb-4">第 {{ spellIndex + 1 }} / {{ currentStep.questions.length }} 题</p>
+      <div class="text-center mb-4">
+        <button @click="speak(currentSpell.audio)" class="text-5xl hover:scale-110 active:scale-95 transition-transform" aria-label="播放发音">🔊</button>
+        <p class="text-sm text-gray-400 mt-1">听发音,点字母拼出单词</p>
+      </div>
+      <!-- 已拼字母 -->
+      <div class="flex flex-wrap justify-center gap-2 mb-4 min-h-[52px] p-2 bg-gray-50 rounded-xl">
+        <span
+          v-for="(ch, idx) in spellBuilt"
+          :key="'built-' + idx"
+          class="w-11 h-11 flex items-center justify-center bg-primary text-white rounded-lg text-2xl font-bold"
+        >{{ ch }}</span>
+        <span v-if="spellBuilt.length === 0" class="text-gray-300 text-2xl">?</span>
+      </div>
+      <!-- 字母 tile -->
+      <div class="flex flex-wrap justify-center gap-3">
+        <button
+          v-for="(ch, idx) in spellTiles"
+          :key="'tile-' + idx"
+          @click="addSpellLetter(ch, idx)"
+          :disabled="spellTileUsed[idx] || spellAnswered"
+          :class="[
+            'w-12 h-12 rounded-lg text-2xl font-bold transition-all border-2',
+            spellTileUsed[idx]
+              ? 'border-gray-100 bg-gray-100 text-gray-300 opacity-30'
+              : 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50 active:scale-95',
+          ]"
+        >{{ ch }}</button>
+      </div>
+      <div class="text-center mt-4">
+        <button
+          v-if="spellBuilt.length > 0 && !spellAnswered"
+          @click="clearSpell"
+          class="px-4 py-2 bg-gray-200 text-gray-600 rounded-full text-base font-semibold hover:bg-gray-300 transition-all mr-2"
+        >✕ 清除</button>
+        <button
+          v-if="spellBuilt.length === spellTiles.length && !spellAnswered"
+          @click="submitSpell"
+          class="px-6 py-2 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all"
+        >确认 ✓</button>
+      </div>
+      <div v-if="spellFeedback === 'right'" class="mt-4 text-center text-2xl animate-bounce">✅ 太棒了!</div>
+      <div v-else-if="spellFeedback === 'wrong'" class="mt-4 text-center text-2xl text-red-500 animate-shake">❌ 再试一次!</div>
+      <div class="text-center mt-4">
+        <button v-if="spellDone" @click="nextStep" class="px-8 py-3 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all">
+          下一关 →
         </button>
       </div>
     </div>
@@ -210,7 +332,7 @@ const stars = ref(0)
 const loading = ref(true)
 const loadError = ref(false)
 
-// listen_tap 状态
+// listen_tap / listen_letter 状态
 const listenIndex = ref(0)
 const listenAnswered = ref(false)
 const listenFeedback = ref('')
@@ -226,10 +348,21 @@ const lookWrongSet = ref(new Set())
 const sentenceIndex = ref(0)
 const sentenceDone = ref(false)
 
+// video 状态
+const activeVideo = ref(0)
+
+// spell 状态
+const spellIndex = ref(0)
+const spellBuilt = ref([])
+const spellTileUsed = ref([])
+const spellAnswered = ref(false)
+const spellFeedback = ref('')
+
 const currentStep = computed(() => steps.value[stepIndex.value] || {})
 const currentQuestion = computed(() => currentStep.value.questions?.[listenIndex.value] || {})
 const currentLook = computed(() => currentStep.value.questions?.[lookIndex.value] || {})
 const currentSentence = computed(() => currentStep.value.sentences?.[sentenceIndex.value] || {})
+const currentSpell = computed(() => currentStep.value.questions?.[spellIndex.value] || {})
 
 const listenDone = computed(() => {
   const qs = currentStep.value.questions || []
@@ -248,6 +381,33 @@ const sentenceIsLast = computed(() => {
   const ss = currentStep.value.sentences || []
   return sentenceIndex.value >= ss.length - 1
 })
+
+const spellTiles = computed(() => {
+  const word = currentSpell.value.word || ''
+  let letters = word.toLowerCase().split('')
+  // 打乱,直到与原顺序不同
+  let shuffled = shuffleArray(letters)
+  let attempts = 0
+  while (shuffled.join('') === word.toLowerCase() && attempts < 10) {
+    shuffled = shuffleArray(letters)
+    attempts++
+  }
+  return shuffled
+})
+
+const spellDone = computed(() => {
+  const qs = currentStep.value.questions || []
+  return qs.length > 0 && spellIndex.value >= qs.length
+})
+
+const shuffleArray = (arr) => {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 const praise = computed(() => {
   if (stars.value >= 12) return '你是超级英语小达人!'
@@ -276,7 +436,7 @@ const playCurrent = () => speak(currentQuestion.value.audio || currentQuestion.v
 
 // ---------- 学习卡片 ----------
 const tapCard = (card) => {
-  speak(card.word)
+  speak(card.voice || card.word)
 }
 
 // ---------- 听音选图 ----------
@@ -302,6 +462,69 @@ const optionClass = (word) => {
   if (!listenAnswered.value) return 'border-amber-200 bg-amber-50 hover:scale-105 active:scale-95'
   if (word === currentQuestion.value.target) return 'border-green-400 bg-green-50'
   return 'border-gray-200 bg-gray-50 opacity-60'
+}
+
+// ---------- 听音选字母(phonics) ----------
+const answerLetter = (letter) => {
+  if (listenAnswered.value) return
+  if (letter === currentQuestion.value.target) {
+    listenAnswered.value = true
+    listenFeedback.value = 'right'
+    stars.value++
+    setTimeout(() => {
+      listenIndex.value++
+      listenAnswered.value = false
+      listenFeedback.value = ''
+      if (!listenDone.value) setTimeout(playCurrent, 400)
+    }, 900)
+  } else {
+    listenFeedback.value = 'wrong'
+    setTimeout(() => { listenFeedback.value = '' }, 800)
+  }
+}
+
+const letterOptionClass = (letter) => {
+  if (!listenAnswered.value) return 'border-gray-200 bg-white hover:border-primary hover:bg-pink-50 active:scale-95'
+  if (letter === currentQuestion.value.target) return 'border-green-400 bg-green-50 text-green-700'
+  return 'border-gray-200 bg-gray-50 opacity-60'
+}
+
+// ---------- 听音拼词(phonics) ----------
+const addSpellLetter = (ch, idx) => {
+  if (spellTileUsed.value[idx] || spellAnswered.value) return
+  spellTileUsed.value[idx] = true
+  spellBuilt.value.push(ch)
+}
+
+const clearSpell = () => {
+  spellBuilt.value = []
+  spellTileUsed.value = []
+}
+
+const submitSpell = () => {
+  if (spellAnswered.value) return
+  spellAnswered.value = true
+  const word = spellBuilt.value.join('').toLowerCase()
+  if (word === (currentSpell.value.word || '').toLowerCase()) {
+    spellFeedback.value = 'right'
+    stars.value++
+    setTimeout(() => {
+      spellIndex.value++
+      spellBuilt.value = []
+      spellTileUsed.value = []
+      spellAnswered.value = false
+      spellFeedback.value = ''
+      if (!spellDone.value) setTimeout(() => speak(currentSpell.value.audio), 400)
+    }, 900)
+  } else {
+    spellFeedback.value = 'wrong'
+    setTimeout(() => {
+      spellFeedback.value = ''
+      spellAnswered.value = false
+      spellBuilt.value = []
+      spellTileUsed.value = []
+    }, 900)
+  }
 }
 
 // ---------- 看图选词 ----------
@@ -356,12 +579,21 @@ const nextStep = () => {
   lookFeedback.value = ''
   sentenceIndex.value = 0
   sentenceDone.value = false
+  spellIndex.value = 0
+  spellBuilt.value = []
+  spellTileUsed.value = []
+  spellAnswered.value = false
+  spellFeedback.value = ''
+  activeVideo.value = 0
 
   if (stepIndex.value < steps.value.length - 1) {
     stepIndex.value++
     const step = currentStep.value
-    if (step.type === 'listen_tap' && step.questions?.length) {
+    if ((step.type === 'listen_tap' || step.type === 'listen_letter') && step.questions?.length) {
       setTimeout(playCurrent, 500)
+    }
+    if (step.type === 'spell' && step.questions?.length) {
+      setTimeout(() => speak(currentSpell.value.audio), 500)
     }
   } else {
     stepIndex.value++ // 进入完成页
@@ -403,8 +635,11 @@ onMounted(async () => {
         if (first) speak(first.word)
       }, 600)
     }
-    if (steps.value[0]?.type === 'listen_tap' && steps.value[0]?.questions?.length) {
+    if ((steps.value[0]?.type === 'listen_tap' || steps.value[0]?.type === 'listen_letter') && steps.value[0]?.questions?.length) {
       setTimeout(playCurrent, 600)
+    }
+    if (steps.value[0]?.type === 'spell' && steps.value[0]?.questions?.length) {
+      setTimeout(() => speak(currentSpell.value.audio), 600)
     }
   } catch {
     loadError.value = true

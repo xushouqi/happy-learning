@@ -11,6 +11,7 @@
 游戏类步骤的具体题目在请求时从 vocab_words 实时组装,配置里只声明单词池。
 """
 import random
+import re
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -32,14 +33,13 @@ def _img_url(image_path):
 
 
 def _word_pool(words, unit_id, db):
-    """返回 {word: {word, image, sentence}} 映射,优先当前单元,找不到再全局兜底。"""
+    """返回 {word: {word, image, sentence}} 映射,仅查当前单元的词(避免串教材配图)。"""
     pool = {}
     if not words:
         return pool
     rows = (
         db.query(VocabWord)
-        .filter(VocabWord.word.in_(words))
-        .order_by(VocabWord.unit_id == unit_id)
+        .filter(VocabWord.word.in_(words), VocabWord.unit_id == unit_id)
         .all()
     )
     for v in rows:
@@ -48,7 +48,7 @@ def _word_pool(words, unit_id, db):
             "image": _img_url(v.image_path),
             "sentence": v.example_sentence,
         })
-    # 兜底:未命中词(如配置里的短语)补空占位
+    # 兜底:未命中词(如配置里的短语或 phonics 例词)补空占位,前端走文字模式
     for w in words:
         pool.setdefault(w, {"word": w, "image": None, "sentence": None})
     return pool
@@ -200,14 +200,60 @@ def get_lesson_content(course_id: int, lesson_id: int, db: Session = Depends(get
         elif stype == "learn":
             words = step.get("words", [])
             cn_map = step.get("cn", {})
+            images_map = step.get("images", {})  # {word: url} 显式配图覆盖(phonics 字母页等)
+            examples_map = step.get("examples", {})  # {word: 例词文本}(phonics 字母卡)
+            voices_map = step.get("voices", {})  # {word: 发音文本} 显式覆盖 TTS 读法
             pool = _word_pool(words, unit_id, db)
-            cards = [
-                {"word": w, "cn": cn_map.get(w, ""), "image": pool[w]["image"], "sentence": pool[w]["sentence"]}
-                for w in words
-            ]
+            cards = []
+            for w in words:
+                voice = voices_map.get(w)
+                if not voice and re.fullmatch(r"[A-Z]", w) and examples_map.get(w):
+                    # 单字母卡(phonics):TTS 读字母名而非字母音,改为读例词序列感知字母音
+                    voice = examples_map[w].replace(" · ", ". ") + "."
+                cards.append({
+                    "word": w,
+                    "cn": cn_map.get(w, ""),
+                    "image": images_map.get(w) or pool[w]["image"],
+                    "sentence": pool[w]["sentence"],
+                    "examples": examples_map.get(w, ""),
+                    "voice": voice or w,
+                })
             steps.append({"type": "learn", "title": step.get("title", "学一学"), "cards": cards})
+        elif stype == "video":
+            # 教学视频:配置 [{label, file}] → 前端点播 /api/media/video/<file>
+            videos = [
+                {"label": v.get("label", ""), "url": f"/api/media/video/{v['file']}"}
+                for v in step.get("videos", []) if v.get("file")
+            ]
+            steps.append({"type": "video", "title": step.get("title", "看动画学一学"), "videos": videos})
+        elif stype == "listen_letter":
+            # 听单词选首字母(phonics):配置 [{letter, sample}] → 音频读 sample,选项是字母
+            letters = step.get("letters", [])
+            all_letters = [x["letter"] for x in letters]
+            questions = []
+            targets = list(letters)
+            random.shuffle(targets)
+            for item in targets[: step.get("count", 5)]:
+                distract = [l for l in all_letters if l != item["letter"]]
+                random.shuffle(distract)
+                options = [item["letter"]] + distract[:3]
+                random.shuffle(options)
+                questions.append({
+                    "target": item["letter"],
+                    "audio": item.get("sample", item["letter"]),
+                    "options": options,
+                })
+            steps.append({"type": "listen_letter", "title": step.get("title", "听一听,选字母"), "questions": questions})
+        elif stype == "spell":
+            # 听音拼词:配置 words 列表,前端把字母打乱让孩子拼
+            words = step.get("words", [])
+            targets = list(words)
+            random.shuffle(targets)
+            questions = [{"word": w, "audio": w} for w in targets[: step.get("count", 4)]]
+            steps.append({"type": "spell", "title": step.get("title", "拼一拼"), "questions": questions})
         elif stype == "listen_tap":
             words = step.get("words", [])
+            voices_map = step.get("voices", {})  # {word: 发音文本} 显式覆盖 TTS 读法(如时间 "5:30"→"five thirty")
             pool = _word_pool(words, unit_id, db)
             questions = []
             for target in _sample_targets(words, step.get("count", 4)):
@@ -216,12 +262,13 @@ def get_lesson_content(course_id: int, lesson_id: int, db: Session = Depends(get
                 random.shuffle(options)
                 questions.append({
                     "target": target,
-                    "audio": target,
+                    "audio": voices_map.get(target, target),
                     "options": [{"word": o, "image": pool[o]["image"]} for o in options],
                 })
             steps.append({"type": "listen_tap", "title": step.get("title", "听一听,点一点"), "questions": questions})
         elif stype == "look_choose":
             words = step.get("words", [])
+            images_map = step.get("images", {})  # {word: url} 显式配图覆盖(phonics 字母页等)
             pool = _word_pool(words, unit_id, db)
             questions = []
             for target in _sample_targets(words, step.get("count", 4)):
@@ -230,7 +277,7 @@ def get_lesson_content(course_id: int, lesson_id: int, db: Session = Depends(get
                 random.shuffle(options)
                 questions.append({
                     "word": target,
-                    "image": pool[target]["image"],
+                    "image": images_map.get(target) or pool[target]["image"],
                     "options": options,
                 })
             steps.append({"type": "look_choose", "title": step.get("title", "看一看,选一选"), "questions": questions})
