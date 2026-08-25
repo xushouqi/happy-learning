@@ -16,17 +16,34 @@ export async function load() {
   return cache
 }
 
+// ---------- 本地存储(带内存降级,防 WebView localStorage 异常) ----------
+const memoryStore = {}
+function safeGet(key) {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return memoryStore[key] != null ? memoryStore[key] : null
+  }
+}
+function safeSet(key, value) {
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    memoryStore[key] = value
+  }
+}
+
 // 本地用户列表(服务端 users + 本地新增)
 const LOCAL_USERS_KEY = 'offline_users'
 function getLocalUsers() {
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY)) || []
+    return JSON.parse(safeGet(LOCAL_USERS_KEY)) || []
   } catch {
     return []
   }
 }
 function saveLocalUsers(list) {
-  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(list))
+  safeSet(LOCAL_USERS_KEY, JSON.stringify(list))
 }
 
 export async function getUsers() {
@@ -37,7 +54,8 @@ export async function getUsers() {
 export async function createUser(name, avatar) {
   const { users } = await load()
   const local = getLocalUsers()
-  const nextId = Math.max(...users.map((u) => u.id), ...local.map((u) => u.id), 0) + 1
+  const ids = [...users.map((u) => u.id), ...local.map((u) => u.id)]
+  const nextId = (ids.length ? Math.max(...ids) : 0) + 1
   const user = { id: nextId, name, avatar, created_at: new Date().toISOString() }
   local.push(user)
   saveLocalUsers(local)
@@ -54,17 +72,17 @@ export async function getCourseRaw(courseId) {
   return courses.find((c) => c.id === courseId)
 }
 
-// ---------- 上课进度(localStorage) ----------
+// ---------- 上课进度(localStorage,带内存降级) ----------
 const PROGRESS_KEY = 'offline_course_progress' // { [lessonId]: { stars, completed } }
 function getProgress() {
   try {
-    return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}
+    return JSON.parse(safeGet(PROGRESS_KEY)) || {}
   } catch {
     return {}
   }
 }
 function setProgress(progress) {
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
+  safeSet(PROGRESS_KEY, JSON.stringify(progress))
 }
 
 function aggregate(course, progress) {
