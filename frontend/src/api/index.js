@@ -1,8 +1,14 @@
 import axios from 'axios'
+import { installOfflineAdapter } from '../offline/api'
 
 const api = axios.create({
   baseURL: '/api',
 })
+
+// 安卓离线版:启用本地数据适配层(构建时设置 VITE_OFFLINE=true)
+if (import.meta.env.VITE_OFFLINE === 'true') {
+  installOfflineAdapter(api)
+}
 
 export default api
 
