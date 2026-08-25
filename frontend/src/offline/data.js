@@ -1,18 +1,12 @@
-// 离线数据加载:从打包进应用的 JSON 读取教材/课程/单词/用户
-// 用于安卓离线版(无后端),Web 版不使用
+// 离线数据加载:直接使用内嵌数据模块(由 scripts/export_offline_data.py 生成)
+// 不使用运行时 fetch——安卓 WebView 中 fetch 本地 JSON 不可靠(曾报 Unexpected end of JSON input)
+
+import { OFFLINE_DATA } from './data-embedded'
 
 let cache = null
 
 export async function load() {
-  if (cache) return cache
-  const base = '/data/'
-  const [textbooks, courses, vocabWords, users] = await Promise.all([
-    fetch(base + 'textbooks.json').then((r) => r.json()),
-    fetch(base + 'courses.json').then((r) => r.json()),
-    fetch(base + 'vocab_words.json').then((r) => r.json()),
-    fetch(base + 'users.json').then((r) => r.json()),
-  ])
-  cache = { textbooks, courses, vocabWords, users }
+  if (!cache) cache = OFFLINE_DATA
   return cache
 }
 

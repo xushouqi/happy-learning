@@ -57,6 +57,27 @@ dump("courses.json", courses)
 dump("vocab_words.json", cur.execute("SELECT id, textbook_id, unit_id, word, image_path, example_sentence FROM vocab_words").fetchall())
 
 # 用户(默认用户列表)
-dump("users.json", cur.execute("SELECT id, name, avatar FROM users ORDER BY id").fetchall())
+users = cur.execute("SELECT id, name, avatar FROM users ORDER BY id").fetchall()
+dump("users.json", users)
+
+# 内嵌数据模块:彻底避免运行时 fetch(安卓 WebView 中 fetch 本地 JSON 不可靠)
+# 生成 frontend/src/offline/data-embedded.js,data.js 直接 import
+def load_json(name):
+    with open(os.path.join(OUT, name), encoding="utf-8") as f:
+        return json.load(f)
+
+embedded = {
+    "textbooks": load_json("textbooks.json"),
+    "courses": load_json("courses.json"),
+    "vocab_words": load_json("vocab_words.json"),
+    "users": [dict(u) for u in users],
+}
+embed_path = os.path.join("frontend", "src", "offline", "data-embedded.js")
+with open(embed_path, "w", encoding="utf-8") as f:
+    f.write("// 自动生成:离线内嵌数据(由 scripts/export_offline_data.py 生成,勿手改)\n")
+    f.write("export const OFFLINE_DATA = ")
+    json.dump(embedded, f, ensure_ascii=False)
+    f.write("\n")
+print(f"内嵌数据 → {embed_path}, {os.path.getsize(embed_path)//1024} KB")
 
 print("导出完成 →", os.path.abspath(OUT))
