@@ -6,7 +6,11 @@ import { OFFLINE_DATA } from './data-embedded'
 let cache = null
 
 export async function load() {
-  if (!cache) cache = OFFLINE_DATA
+  if (!cache) {
+    cache = OFFLINE_DATA
+    // 兼容键名:content.js 依赖 load().vocabWords(驼峰)
+    if (!cache.vocabWords && cache.vocab_words) cache.vocabWords = cache.vocab_words
+  }
   return cache
 }
 

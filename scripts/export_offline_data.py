@@ -69,7 +69,8 @@ def load_json(name):
 embedded = {
     "textbooks": load_json("textbooks.json"),
     "courses": load_json("courses.json"),
-    "vocab_words": load_json("vocab_words.json"),
+    # 键名必须与代码一致(vocabWords 驼峰):content.js 用 load().vocabWords,勿改回下划线
+    "vocabWords": load_json("vocab_words.json"),
     "users": [dict(u) for u in users],
 }
 embed_path = os.path.join("frontend", "src", "offline", "data-embedded.js")
