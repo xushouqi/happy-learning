@@ -58,10 +58,10 @@ import { users as usersApi } from '../api'
 const router = useRouter()
 const showAdd = ref(false)
 const newName = ref('')
-const newAvatar = ref('')
+const avatarOptions = ['🐰', '🐱', '🐶', '🐼', '🦊', '🐨', '🐸', '🦄']
+const newAvatar = ref(avatarOptions[0]) // 默认选中第一个,避免"没选头像点确认没反应"
 
 const avatars = ref([])
-const avatarOptions = ['🐰', '🐱', '🐶', '🐼', '🦊', '🐨', '🐸', '🦄']
 
 onMounted(async () => {
   try {
@@ -79,15 +79,24 @@ const selectUser = (user) => {
 }
 
 const addUser = async () => {
-  if (!newName.value || !newAvatar.value) return
+  const name = newName.value.trim()
+  if (!name) {
+    alert('请输入名字')
+    return
+  }
+  if (!newAvatar.value) {
+    alert('请选择一个头像')
+    return
+  }
   try {
-    const res = await usersApi.create({ name: newName.value, avatar: newAvatar.value })
+    const res = await usersApi.create({ name, avatar: newAvatar.value })
     avatars.value.push(res.data)
     showAdd.value = false
     newName.value = ''
-    newAvatar.value = ''
+    newAvatar.value = avatarOptions[0]
   } catch (e) {
     console.error('Failed to create user', e)
+    alert('创建失败:' + (e.message || '未知错误,请重试'))
   }
 }
 </script>
