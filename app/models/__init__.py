@@ -118,3 +118,55 @@ class UnitProgress(Base):
 
     user = relationship("User", back_populates="unit_progress")
     unit = relationship("Unit")
+
+
+class Course(Base):
+    """课程模块:一门课程挂在一个教材单元上,由多个课时(lesson)组成。"""
+    __tablename__ = "courses"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    textbook_id = Column(Integer, ForeignKey("textbooks.id"), nullable=False)
+    unit_id = Column(Integer, ForeignKey("units.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    cover_emoji = Column(String, nullable=True)
+    order = Column(Integer, default=0)
+    status = Column(String, default="active")
+
+    lessons = relationship(
+        "CourseLesson",
+        back_populates="course",
+        cascade="all, delete-orphan",
+        order_by="CourseLesson.order",
+    )
+    unit = relationship("Unit")
+    textbook = relationship("Textbook")
+
+
+class CourseLesson(Base):
+    """课时:content 为 JSON,包含有序的互动步骤列表(见 seed_courses.py 配置说明)。"""
+    __tablename__ = "course_lessons"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    title = Column(String, nullable=False)
+    subtitle = Column(String, nullable=True)
+    order = Column(Integer, default=0)
+    content = Column(JSON, nullable=False, default=dict)
+
+    course = relationship("Course", back_populates="lessons")
+
+
+class CourseProgress(Base):
+    """上课进度:记录每个孩子每节课的完成状态和获得星星数。"""
+    __tablename__ = "course_progress"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("course_lessons.id"), nullable=False)
+    stars = Column(Integer, default=0)
+    completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")

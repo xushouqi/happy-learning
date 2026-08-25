@@ -52,3 +52,13 @@ export const progress = {
   byCourse: (userId) => api.get(`/progress/user/${userId}/textbooks`),
   calendar: (userId, year, month) => api.get(`/progress/user/${userId}/calendar`, { params: { year, month } }),
 }
+
+// 课程模块
+export const courseApi = {
+  list: (userId) => api.get('/course/', { params: userId ? { user_id: userId } : {} }),
+  get: (id, userId) => api.get(`/course/${id}`, { params: userId ? { user_id: userId } : {} }),
+  lessonContent: (courseId, lessonId) => api.get(`/course/${courseId}/lesson/${lessonId}/content`),
+  completeLesson: (data) => api.post('/course/lesson-complete', data),
+  progress: (userId) => api.get(`/course/progress/${userId}`),
+}
+

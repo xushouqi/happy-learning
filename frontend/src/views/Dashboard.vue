@@ -4,6 +4,10 @@
       <button @click="router.push('/')" class="text-3xl hover:scale-110 transition-transform">🏠</button>
       <h1 class="text-2xl font-bold text-primary">{{ greeting }}</h1>
       <div class="flex gap-3">
+        <button @click="router.push('/courses')" class="flex flex-col items-center hover:scale-110 transition-transform">
+          <span class="text-3xl">🎓</span>
+          <span class="text-xs text-gray-600">课程</span>
+        </button>
         <button @click="router.push('/wrongbook')" class="flex flex-col items-center hover:scale-110 transition-transform relative">
           <span class="text-3xl">📝</span>
           <span class="text-xs text-gray-600">错题</span>
@@ -19,6 +23,23 @@
         </button>
       </div>
     </header>
+
+    <!-- 互动课程入口 -->
+    <div class="bg-white rounded-2xl p-6 shadow-lg mb-6 border-4 border-primary bg-gradient-to-r from-white to-amber-50">
+      <div class="flex items-center gap-4">
+        <span class="text-5xl">🎓</span>
+        <div class="flex-1">
+          <h2 class="text-xl font-bold text-gray-800">互动课程</h2>
+          <p class="text-gray-600 text-sm mt-0.5">跟着 Muzzy 边玩边学,点一点、听一听、选一选</p>
+        </div>
+      </div>
+      <button
+        @click="router.push('/courses')"
+        class="mt-4 px-6 py-3 bg-primary text-white rounded-full text-lg font-bold hover:bg-opacity-80 transition-all animate-pulse"
+      >
+        去上课 →
+      </button>
+    </div>
 
     <!-- Today's Challenge -->
     <div class="bg-white rounded-2xl p-6 shadow-lg mb-6 border-4 border-accent">

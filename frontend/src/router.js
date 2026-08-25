@@ -13,6 +13,9 @@ const routes = [
   { path: '/results', name: 'results', component: () => import('./views/Results.vue') },
   { path: '/speech-practice', name: 'speechPractice', component: () => import('./views/SpeechPractice.vue') },
   { path: '/speech-quiz/:unitId', name: 'speechQuiz', component: () => import('./views/SpeechQuiz.vue') },
+  { path: '/courses', name: 'courses', component: () => import('./views/CourseList.vue') },
+  { path: '/courses/:courseId', name: 'courseDetail', component: () => import('./views/CourseDetail.vue') },
+  { path: '/courses/:courseId/lesson/:lessonId', name: 'lessonPlayer', component: () => import('./views/LessonPlayer.vue') },
 ]
 
 const router = createRouter({

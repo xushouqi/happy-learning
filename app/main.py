@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base
-from app.routers import users, courses, questions, scores, media, tts
+from app.routers import users, courses, questions, scores, media, tts, course_module
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -29,6 +29,7 @@ app.include_router(scores.router)
 app.include_router(scores.progress_router)
 app.include_router(media.router)
 app.include_router(tts.router)
+app.include_router(course_module.router)
 
 # Mount muzzy word card images
 try:

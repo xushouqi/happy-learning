@@ -8,3 +8,6 @@ tmp/
 .claude/
 data/
 english_learning.db
+
+.backup-*/
+.playwright-mcp/

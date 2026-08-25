@@ -144,3 +144,47 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --- Course Module ---
+class CourseLessonSummary(BaseModel):
+    id: int
+    title: str
+    subtitle: Optional[str] = None
+    order: int
+    completed: bool = False
+    stars: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+class CourseResponse(BaseModel):
+    id: int
+    textbook_id: int
+    unit_id: int
+    title: str
+    description: Optional[str] = None
+    cover_emoji: Optional[str] = None
+    order: int
+    status: str
+    unit_name: Optional[str] = None
+    textbook_name: Optional[str] = None
+    lesson_count: int = 0
+    completed_lessons: int = 0
+    total_stars: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+class CourseDetailResponse(CourseResponse):
+    lessons: List[CourseLessonSummary] = []
+
+
+class CourseProgressCreate(BaseModel):
+    user_id: int
+    course_id: int
+    lesson_id: int
+    stars: int = 0
+
