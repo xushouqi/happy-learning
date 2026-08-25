@@ -318,6 +318,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { courseApi } from '../api'
+import { speak as ttsSpeak, stopSpeaking as ttsStop } from '../lib/tts'
 
 const router = useRouter()
 const route = useRoute()
@@ -420,7 +421,7 @@ const getUserId = () => parseInt(localStorage.getItem('userId'))
 
 // ---------- 发音(统一模块:原生 TTS 插件 / Web speechSynthesis) ----------
 const speak = (text) => {
-  import('../lib/tts').then((m) => m.speak(text))
+  ttsSpeak(text)
 }
 
 const playCurrent = () => speak(currentQuestion.value.audio || currentQuestion.value.target)
@@ -606,7 +607,7 @@ const finishLesson = async () => {
 }
 
 const goBack = () => {
-  import('../lib/tts').then((m) => m.stopSpeaking())
+  ttsStop()
   router.push(`/courses/${courseId}`)
 }
 

@@ -116,6 +116,7 @@
 </template>
 
 <script setup>
+import { speak } from '../lib/tts'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 

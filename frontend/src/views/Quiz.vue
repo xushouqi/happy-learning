@@ -237,6 +237,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { questions as questionsApi, scores as scoresApi } from '../api'
+import { speak } from '../lib/tts'
 
 const router = useRouter()
 const route = useRoute()
@@ -425,10 +426,9 @@ onMounted(async () => {
   }
 })
 
-const playAudio = async () => {
+const playAudio = () => {
   if (!currentQuestion.value?.audio_text) return
-  // 统一发音:原生环境走 Capacitor TTS 插件,Web 回退 speechSynthesis(原 /api/tts 离线不可用)
-  const { speak } = await import('../lib/tts')
+  // 统一发音:预生成音频优先,原生 TTS / speechSynthesis 兜底
   speak(currentQuestion.value.audio_text, { rate: 0.6 })
 }
 
