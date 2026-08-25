@@ -753,8 +753,15 @@ def unit7_course():
                         "cn": {"5:30": "五点半", "8:00": "八点", "10:00": "十点", "10:15": "十点一刻",
                                "10:30": "十点半", "11:00": "十一点", "quarter to eleven": "十一点差一刻",
                                "quarter to three": "三点差一刻", "half past four": "四点半", "half": "一半"},
+                        # 时间文本 TTS 读法不确定,显式指定标准读法
+                        "voices": {"5:30": "five thirty", "8:00": "eight o'clock", "10:00": "ten o'clock",
+                                   "10:15": "ten fifteen", "10:30": "ten thirty", "11:00": "eleven o'clock"},
                     },
-                    {"type": "listen_tap", "title": "听一听,点一点", "words": times, "count": 7},
+                    {
+                        "type": "listen_tap", "title": "听一听,点一点", "words": times, "count": 7,
+                        "voices": {"5:30": "five thirty", "8:00": "eight o'clock", "10:00": "ten o'clock",
+                                   "10:15": "ten fifteen", "10:30": "ten thirty", "11:00": "eleven o'clock"},
+                    },
                     {"type": "look_choose", "title": "看一看,选一选", "words": times, "count": 7},
                     {
                         "type": "sentence",
@@ -1195,20 +1202,391 @@ def unit12_course():
     }
 
 
+# ---------- Oxford Phonics World Level 1 ----------
+
+PHONICS_L1_LETTERS = {
+    "a": ["apple", "ant", "alligator"], "b": ["bear", "ball", "bed"],
+    "c": ["cat", "cup", "car"], "d": ["dog", "doll", "door"],
+    "e": ["egg", "elephant", "envelope"], "f": ["fish", "frog", "fan"],
+    "g": ["gorilla", "goat", "gift"], "h": ["horse", "hat", "house"],
+    "i": ["insect", "igloo", "ink"], "j": ["jet", "jar", "jam"],
+    "k": ["kangaroo", "kite", "key"], "l": ["lion", "lamp", "leaf"],
+    "m": ["monkey", "moon", "mouse"], "n": ["nut", "net", "nose"],
+    "o": ["octopus", "orange", "owl"], "p": ["pig", "pen", "pan"],
+    "q": ["queen", "quilt", "quiet"], "r": ["rabbit", "ring", "rain"],
+    "s": ["sun", "star", "snake"], "t": ["tiger", "tree", "tent"],
+    "u": ["umbrella", "uncle", "up"], "v": ["van", "vest", "violin"],
+    "w": ["whale", "watch", "wolf"], "x": ["box", "fox", "six"],
+    "y": ["yak", "yarn", "yellow"], "z": ["zebra", "zoo", "zip"],
+}
+
+
+def phonics_level1_course():
+    """Oxford Phonics World Level 1:26 个字母音,6 节课。"""
+    groups = [
+        ("字母 A B C D E", ["a", "b", "c", "d", "e"], "🍎", "字母 A 到 E,认识它们的发音和单词!"),
+        ("字母 F G H I J", ["f", "g", "h", "i", "j"], "🐸", "字母 F 到 J,继续认识新的字母朋友!"),
+        ("字母 K L M N O", ["k", "l", "m", "n", "o"], "🐨", "字母 K 到 O,每个字母都有自己的声音!"),
+        ("字母 P Q R S T", ["p", "q", "r", "s", "t"], "🐯", "字母 P 到 T,大声读出来!"),
+        ("字母 U V W X", ["u", "v", "w", "x"], "☂️", "字母 U 到 X,快学完啦!"),
+        ("字母 Y Z 大挑战", ["y", "z"], "🎉", "最后两个字母 Y 和 Z!学完就能挑战拼单词啦!"),
+    ]
+
+    lessons = []
+    for title, letters, emoji, intro in groups:
+        steps = [
+            {
+                "type": "story",
+                "title": "故事开场",
+                "emoji": emoji,
+                "text": intro + "\n点卡片听发音,再看动画,最后闯关赢星星!",
+            },
+            {
+                "type": "learn",
+                "title": "学一学:字母卡",
+                "words": [L.upper() for L in letters],
+                "cn": {L.upper(): f"字母 {L.upper()}" for L in letters},
+                "images": {L.upper(): f"/phonics/l1/{L}.png" for L in letters},
+                "examples": {L.upper(): " · ".join(PHONICS_L1_LETTERS[L]) for L in letters},
+            },
+            {
+                "type": "video",
+                "title": "看动画学字母",
+                "videos": [{"label": L.upper(), "file": f"phonics_l1_{L}.mp4"} for L in letters],
+            },
+            {
+                "type": "listen_letter",
+                "title": "听一听,选首字母",
+                "letters": [{"letter": L.upper(), "sample": PHONICS_L1_LETTERS[L][0]} for L in letters],
+                "count": min(5, len(letters)),
+            },
+            {
+                "type": "look_choose",
+                "title": "看一看,选字母",
+                "words": [L.upper() for L in letters],
+                "images": {L.upper(): f"/phonics/l1/{L}.png" for L in letters},
+                "count": min(5, len(letters)),
+            },
+        ]
+        # 最后一课加拼写挑战
+        if letters == ["y", "z"]:
+            steps.append({
+                "type": "spell",
+                "title": "拼一拼小挑战",
+                "words": ["cat", "dog", "sun", "pig", "hat", "bed"],
+                "count": 4,
+            })
+        lessons.append({"title": title, "subtitle": " ".join(L.upper() for L in letters) + " 字母音与例词", "steps": steps})
+
+    return {
+        "textbook_id": 2,  # Oxford Phonics World
+        "unit_id": 13,
+        "title": "Oxford Phonics · 字母音 A-Z",
+        "description": "跟着 Oxford Phonics World 认识 26 个字母和它们的发音:看动画、听单词选首字母、拼单词,边玩边学。",
+        "cover_emoji": "🔤",
+        "order": 0,
+        "lessons": lessons,
+    }
+
+
+# ---------- Oxford Phonics Level 2-5 ----------
+# 项目分级与原版教材错位:l2 词族=原版第2级,l3 辅音=原版第4级,l4 元音=原版第3级(+第5级SB补 oi/oy/ou),l5 复杂=第5级SB+第3级(igh)
+# 配图:l2/l3/l4 用教学视频抽帧(data/phonics/lN/*.png),l5 用第5级SB渲染页;无资源项走文字模式
+
+PHONICS_L2_GROUPS = [
+    ("at", ["cat", "bat", "hat", "mat", "rat", "sat"], "词族 -at,例词:猫、蝙蝠、帽子"),
+    ("it", ["sit", "hit", "bit", "fit", "pit"], "词族 -it,例词:坐、打、一点"),
+    ("en", ["pen", "hen", "ten", "men", "den"], "词族 -en,例词:钢笔、母鸡、十"),
+    ("ig", ["pig", "big", "wig", "dig", "fig"], "词族 -ig,例词:猪、大的、假发"),
+    ("un", ["sun", "run", "fun", "bun", "pun"], "词族 -un,例词:太阳、跑、好玩"),
+    ("ed", ["bed", "red", "fed", "led"], "词族 -ed,例词:床、红色"),
+    ("ap", ["map", "cap", "tap", "nap", "lap"], "词族 -ap,例词:地图、帽子、轻拍"),
+    ("in", ["pin", "bin", "fin", "win", "tin"], "词族 -in,例词:别针、垃圾桶、鱼鳍"),
+    ("ot", ["pot", "hot", "cot", "dot", "lot"], "词族 -ot,例词:锅、热的、圆点"),
+    ("ug", ["bug", "rug", "mug", "jug", "tug"], "词族 -ug,例词:虫子、地毯、马克杯"),
+]
+
+PHONICS_L3_GROUPS = [
+    ("bl", ["black", "blue", "block", "blob", "blow"], "辅音组合 bl-,例词:黑色、蓝色、积木"),
+    ("cl", ["clap", "clock", "club", "climb", "clip"], "辅音组合 cl-,例词:拍手、钟、爬"),
+    ("fl", ["flag", "flower", "fly", "flap", "flat"], "辅音组合 fl-,例词:旗、花、飞"),
+    ("gl", ["glass", "glow", "glue", "glove", "globe"], "辅音组合 gl-,例词:玻璃杯、发光、胶水"),
+    ("pl", ["plane", "plant", "play", "plate", "plus"], "辅音组合 pl-,例词:飞机、植物、玩"),
+    ("sl", ["sleep", "slide", "slow", "slip", "slug"], "辅音组合 sl-,例词:睡觉、滑梯、慢"),
+    ("br", ["brown", "brick", "brush", "bread", "broom"], "辅音组合 br-,例词:棕色、砖、刷子"),
+    ("cr", ["crab", "crop", "cry", "crack", "crew"], "辅音组合 cr-,例词:螃蟹、哭、裂缝"),
+    ("dr", ["dress", "drag", "drop", "drum", "drink"], "辅音组合 dr-,例词:连衣裙、拖、滴"),
+    ("fr", ["frog", "fruit", "frock", "fry", "fresh"], "辅音组合 fr-,例词:青蛙、水果、煎"),
+    ("gr", ["grape", "grass", "green", "grow", "grin"], "辅音组合 gr-,例词:葡萄、草、绿色"),
+    ("tr", ["tree", "train", "truck", "trap", "trip"], "辅音组合 tr-,例词:树、火车、卡车"),
+]
+
+PHONICS_L4_GROUPS = [
+    ("ai", ["rain", "train", "paint", "mail", "tail"], "元音组合 ai,例词:雨、火车、油漆"),
+    ("ay", ["day", "play", "say", "way", "stay"], "元音组合 ay,例词:白天、玩、说"),
+    ("ee", ["bee", "tree", "see", "feet"], "元音组合 ee,例词:蜜蜂、树、看见"),
+    ("ea", ["eat", "leaf", "sea", "tea", "read"], "元音组合 ea,例词:吃、叶子、大海"),
+    ("oa", ["boat", "coat", "goat", "road", "soap"], "元音组合 oa,例词:船、外套、山羊"),
+    ("ow", ["cow", "now", "how", "brown", "clown"], "元音组合 ow,例词:奶牛、现在、怎么"),
+    ("oi", ["coin", "boil", "soil", "foil", "noise"], "元音组合 oi,例词:硬币、煮、土壤"),
+    ("oy", ["boy", "toy", "joy", "soy", "oyster"], "元音组合 oy,例词:男孩、玩具、快乐"),
+    ("ou", ["house", "mouse", "cloud", "mouth", "out"], "元音组合 ou,例词:房子、老鼠、云"),
+    ("ie", ["pie", "tie", "die", "lie", "cries"], "元音组合 ie,例词:派、领带、躺"),
+]
+
+PHONICS_L5_GROUPS = [
+    ("ar", ["car", "star", "park", "farm", "dark"], "r 组合 ar,例词:汽车、星星、公园"),
+    ("or", ["fork", "pork", "corn", "storm", "born"], "r 组合 or,例词:叉子、玉米、暴风雨"),
+    ("ir", ["bird", "shirt", "girl", "first", "dirt"], "r 组合 ir,例词:鸟、衬衫、女孩"),
+    ("ur", ["turn", "burn", "nurse", "purse", "fur"], "r 组合 ur,例词:转动、燃烧、护士"),
+    ("er", ["her", "fern", "term", "nerve", "verb"], "r 组合 er,例词:她、蕨类、动词"),
+    ("igh", ["night", "light", "high", "right", "sight"], "组合 igh,例词:夜晚、光、高"),
+    ("ough", ["cough", "bough", "dough", "tough", "rough"], "组合 ough,例词:咳嗽、面团"),
+    ("tion", ["action", "motion", "station", "nation", "option"], "组合 tion,例词:动作、车站、国家"),
+    ("sion", ["vision", "mission", "passion", "fusion", "tension"], "组合 sion,例词:视力、任务、激情"),
+    ("ture", ["nature", "future", "picture", "capture", "creature"], "组合 ture,例词:自然、未来、图画"),
+]
+
+# 词族卡发音:读前 3 个例词(感知组合音)
+def _voice_text(words):
+    return ". ".join(words[:3]) + "."
+
+
+def _pick_spell(all_words, n=4):
+    """拼写选词:优先 5 字母以内的短词,否则取最短的 n 个。"""
+    short = [w for w in all_words if len(w) <= 5]
+    pool = short if short else sorted(all_words, key=len)
+    return pool[:n]
+
+
+def _phonics_lessons(groups, video_lvl, img_lvl, lvl, spell_words, lesson_split, intro_tpl):
+    """通用:按 lesson_split 分组生成课时(story/learn/video/listen_tap/spell)。"""
+    lessons = []
+    for idx, chunk in enumerate(lesson_split):
+        chunk_groups = [g for g in groups if g[0] in chunk]
+        patterns = [g[0] for g in chunk_groups]
+        words_map = {g[0]: g[1] for g in chunk_groups}  # pattern -> 例词
+        all_words = []
+        for g in chunk_groups:
+            for w in g[1]:
+                if w not in all_words:
+                    all_words.append(w)
+        steps = [
+            {
+                "type": "story",
+                "title": "故事开场",
+                "emoji": "🔤",
+                "text": intro_tpl.format(", ".join(p.upper() for p in patterns)) + "\n点卡片听发音,再看动画,最后拼单词赢星星!",
+            },
+            {
+                "type": "learn",
+                "title": "学一学:组合卡",
+                "words": patterns,
+                "cn": {p: f"{p} 组合" for p in patterns},
+                "images": {p: f"/phonics/{img_lvl}/{p}.png" for p in patterns},
+                "examples": {p: " · ".join(words_map[p]) for p in patterns},
+                "voices": {p: _voice_text(words_map[p]) for p in patterns},
+            },
+        ]
+        if video_lvl:
+            steps.append({
+                "type": "video",
+                "title": "看动画学一学",
+                "videos": [{"label": p.upper(), "file": f"phonics_{video_lvl}_{p}.mp4"} for p in patterns],
+            })
+        steps.append({
+            "type": "listen_tap",
+            "title": "听一听,选一选",
+            "words": all_words,
+            "count": min(6, len(all_words)),
+        })
+        steps.append({
+            "type": "spell",
+            "title": "拼一拼",
+            "words": spell_words[idx] if idx < len(spell_words) else all_words[:4],
+            "count": min(4, len(spell_words[idx] if idx < len(spell_words) else all_words)),
+        })
+        lessons.append({
+            "title": " + ".join(p.upper() for p in patterns),
+            "subtitle": " + ".join(g[2] for g in chunk_groups),
+            "steps": steps,
+        })
+    return lessons
+
+
+def phonics_level2_course():
+    """CVC 词族(项目 unit 14):10 词族 5 课。配图/视频来自原版第2级。"""
+    groups = PHONICS_L2_GROUPS
+    return {
+        "textbook_id": 2,
+        "unit_id": 14,
+        "title": "Oxford Phonics · CVC 单词拼读",
+        "description": "学会 -at、-en、-ig 等词族,把辅音和元音拼在一起读单词,还能听音拼写!",
+        "cover_emoji": "🐱",
+        "order": 1,
+        "lessons": _phonics_lessons(
+            groups, "l2", "l2", 2,
+            [["cat", "hat", "sit", "hit"], ["pen", "hen", "pig", "big"],
+             ["sun", "run", "bed", "red"], ["map", "cap", "pin", "win"],
+             ["pot", "hot", "bug", "rug"]],
+            [["at", "it"], ["en", "ig"], ["un", "ed"], ["ap", "in"], ["ot", "ug"]],
+            "今天认识词族 {}!把两个字母合起来读,就能拼出好多单词。",
+        ),
+    }
+
+
+def phonics_level3_course():
+    """辅音组合(项目 unit 15):12 组合 4 课。配图/视频来自原版第4级。"""
+    groups = PHONICS_L3_GROUPS
+    return {
+        "textbook_id": 2,
+        "unit_id": 15,
+        "title": "Oxford Phonics · 辅音组合",
+        "description": "学会 bl-、cl-、br- 等辅音组合,两个辅音一起发,拼读更多单词!",
+        "cover_emoji": "🚂",
+        "order": 2,
+        "lessons": _phonics_lessons(
+            groups, "l3", "l3", 3,
+            [["flag", "clock", "blue", "clap"], ["glue", "sleep", "play", "slide"],
+             ["brown", "dress", "crab", "drop"], ["frog", "grape", "tree", "train"]],
+            [["bl", "cl", "fl"], ["gl", "pl", "sl"], ["br", "cr", "dr"], ["fr", "gr", "tr"]],
+            "今天认识辅音组合 {}!两个辅音一起发音,读得更快更顺。",
+        ),
+    }
+
+
+def phonics_level4_course():
+    """元音组合(项目 unit 16):10 组合 3 课。ai/ay/ee/ea/oa/ow/ie 用原版第3级视频帧,oi/oy/ou 用第5级SB页。"""
+    groups = PHONICS_L4_GROUPS
+    # 每个组合的配图目录:oi/oy/ou 在第5级,其余在第4级
+    img_lvl_map = {p: ("l5" if p in ("oi", "oy", "ou") else "l4") for p, _, _ in groups}
+    # 视频:oi/oy/ou 无
+    video_map = {p: ("l4" if p not in ("oi", "oy", "ou") else None) for p, _, _ in groups}
+
+    lessons = []
+    for chunk in ([["ai", "ay", "ee", "ea"], ["oa", "ow", "ie"], ["oi", "oy", "ou"]]):
+        chunk_groups = [g for g in groups if g[0] in chunk]
+        patterns = [g[0] for g in chunk_groups]
+        words_map = {g[0]: g[1] for g in chunk_groups}
+        all_words = []
+        for g in chunk_groups:
+            for w in g[1]:
+                if w not in all_words:
+                    all_words.append(w)
+        vids = [{"label": p.upper(), "file": f"phonics_{video_map[p]}_{p}.mp4"} for p in patterns if video_map[p]]
+        spell = _pick_spell(all_words)
+        steps = [
+            {
+                "type": "story",
+                "title": "故事开场",
+                "emoji": "🔤",
+                "text": f"今天认识元音组合 {', '.join(p.upper() for p in patterns)}!\n两个元音手拉手,发出一个新声音。" + ("\n点卡片听发音,再看动画,最后拼单词赢星星!" if vids else "\n点卡片听发音,再拼单词赢星星!"),
+            },
+            {
+                "type": "learn",
+                "title": "学一学:组合卡",
+                "words": patterns,
+                "cn": {p: f"{p} 组合" for p in patterns},
+                "images": {p: f"/phonics/{img_lvl_map[p]}/{p}.png" for p in patterns},
+                "examples": {p: " · ".join(words_map[p]) for p in patterns},
+                "voices": {p: _voice_text(words_map[p]) for p in patterns},
+            },
+        ]
+        if vids:
+            steps.append({"type": "video", "title": "看动画学一学", "videos": vids})
+        steps.append({"type": "listen_tap", "title": "听一听,选一选", "words": all_words, "count": min(6, len(all_words))})
+        steps.append({"type": "spell", "title": "拼一拼", "words": spell, "count": len(spell)})
+        lessons.append({
+            "title": " + ".join(p.upper() for p in patterns),
+            "subtitle": " + ".join(g[2] for g in chunk_groups),
+            "steps": steps,
+        })
+
+    return {
+        "textbook_id": 2,
+        "unit_id": 16,
+        "title": "Oxford Phonics · 元音组合",
+        "description": "学会 ai、ee、oa 等元音组合,两个元音一起发音,读出更多单词!",
+        "cover_emoji": "🎯",
+        "order": 3,
+        "lessons": lessons,
+    }
+
+
+def phonics_level5_course():
+    """复杂组合(项目 unit 17):10 组合 3 课。ar/or/ir/ur/er 用第5级SB页,igh 用视频帧,ough/tion/sion/ture 文字模式。"""
+    groups = PHONICS_L5_GROUPS
+    # 配图:ar/ir/ur/er/or 在第5级,igh 也在 l5(视频帧),其余无图
+    img_map = {p: f"/phonics/l5/{p}.png" for p in ("ar", "or", "ir", "ur", "er", "igh")}
+    video_map = {"igh": "l5"}  # 只有 igh 有视频
+
+    lessons = []
+    for chunk in ([["ar", "or", "ir", "ur", "er"], ["igh", "ough"], ["tion", "sion", "ture"]]):
+        chunk_groups = [g for g in groups if g[0] in chunk]
+        patterns = [g[0] for g in chunk_groups]
+        words_map = {g[0]: g[1] for g in chunk_groups}
+        all_words = []
+        for g in chunk_groups:
+            for w in g[1]:
+                if w not in all_words:
+                    all_words.append(w)
+        vids = [{"label": p.upper(), "file": f"phonics_{video_map[p]}_{p}.mp4"} for p in patterns if p in video_map]
+        spell = _pick_spell(all_words)
+        steps = [
+            {
+                "type": "story",
+                "title": "故事开场",
+                "emoji": "🔤",
+                "text": f"今天认识特殊组合 {', '.join(p.upper() for p in patterns)}!\n这些组合的发音有点特别,跟着卡片读一读。" + ("\n再看动画,最后拼单词赢星星!" if vids else "\n点卡片听发音,再拼单词赢星星!"),
+            },
+            {
+                "type": "learn",
+                "title": "学一学:组合卡",
+                "words": patterns,
+                "cn": {p: f"{p} 组合" for p in patterns},
+                "images": {p: img_map[p] for p in patterns if p in img_map},
+                "examples": {p: " · ".join(words_map[p]) for p in patterns},
+                "voices": {p: _voice_text(words_map[p]) for p in patterns},
+            },
+        ]
+        if vids:
+            steps.append({"type": "video", "title": "看动画学一学", "videos": vids})
+        steps.append({"type": "listen_tap", "title": "听一听,选一选", "words": all_words, "count": min(6, len(all_words))})
+        steps.append({"type": "spell", "title": "拼一拼", "words": spell, "count": len(spell)})
+        lessons.append({
+            "title": " + ".join(p.upper() for p in patterns),
+            "subtitle": " + ".join(g[2] for g in chunk_groups),
+            "steps": steps,
+        })
+
+    return {
+        "textbook_id": 2,
+        "unit_id": 17,
+        "title": "Oxford Phonics · 特殊组合",
+        "description": "学会 ar、ir、igh、tion 等特殊组合的发音,读出更复杂的单词!",
+        "cover_emoji": "🌟",
+        "order": 4,
+        "lessons": lessons,
+    }
+
+
 COURSES = [unit1_course(), unit2_course(), unit3_course(), unit4_course(), unit5_course(), unit6_course(),
-           unit7_course(), unit8_course(), unit9_course(), unit10_course(), unit11_course(), unit12_course()]
+           unit7_course(), unit8_course(), unit9_course(), unit10_course(), unit11_course(), unit12_course(),
+           phonics_level1_course(), phonics_level2_course(), phonics_level3_course(),
+           phonics_level4_course(), phonics_level5_course()]
 
 
 def seed_course(db, cfg):
     """幂等写入一门课程:保留课程记录,重建课时与进度。"""
+    tb_id = cfg.get("textbook_id", TEXTBOOK_ID)  # 课程可指定所属教材(默认 Big Muzzy)
     course = (
         db.query(Course)
-        .filter(Course.textbook_id == TEXTBOOK_ID, Course.unit_id == cfg["unit_id"])
+        .filter(Course.textbook_id == tb_id, Course.unit_id == cfg["unit_id"])
         .first()
     )
     if not course:
         course = Course(
-            textbook_id=TEXTBOOK_ID,
+            textbook_id=tb_id,
             unit_id=cfg["unit_id"],
             title=cfg["title"],
             description=cfg["description"],
@@ -1219,6 +1597,7 @@ def seed_course(db, cfg):
         db.add(course)
         db.flush()
     else:
+        course.textbook_id = tb_id
         course.title = cfg["title"]
         course.description = cfg["description"]
         course.cover_emoji = cfg["cover_emoji"]

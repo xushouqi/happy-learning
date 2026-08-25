@@ -43,6 +43,12 @@ try:
 except RuntimeError:
     pass  # yakka_dee directory not present
 
+# Mount Oxford Phonics pages (rendered letter/pattern pages)
+try:
+    app.mount("/phonics", StaticFiles(directory="data/phonics"), name="phonics")
+except RuntimeError:
+    pass  # phonics directory not present
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
