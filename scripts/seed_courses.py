@@ -1349,7 +1349,8 @@ PHONICS_L5_GROUPS = [
 
 # 词族卡发音:读前 3 个例词(感知组合音)
 def _voice_text(words):
-    return ". ".join(words[:3]) + "."
+    # 组合卡发音:读全部例词(不截断前3个)
+    return ". ".join(words) + "."
 
 
 def _pick_spell(all_words, n=4):
