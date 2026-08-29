@@ -200,7 +200,7 @@
       <div v-if="['listen_select', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
         <button
           v-for="(option, idx) in currentQuestion.options"
-          :key="option"
+          :key="current + '-' + idx"
           @click="selectAnswer(option)"
           :disabled="answered"
           :class="[
@@ -435,10 +435,20 @@ const playAudio = () => {
 // Auto-play audio when question changes
 watch(currentQuestion, (q) => {
   if (!q) return
+  // Reset all selection state when question changes
+  selectedOption.value = null
+  answered.value = false
+  isCorrect.value = false
+  feedback.value = false
+  imageLoaded.value = true
+  builtLetters.value = []
+  tileUsed.value = []
+  builtSentenceWords.value = []
+  wordTileUsed.value = []
+
   if (['listen_select', 'listen_spell', 'listen_spell_sentence', 'image_listen_spell_sentence'].includes(q.type)) {
     setTimeout(() => playAudio(), 300)
   }
-  imageLoaded.value = true
 })
 
 const getOptionClass = (option) => {
