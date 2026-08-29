@@ -197,16 +197,14 @@
       </div>
 
       <!-- Options (listen_select, image_select_word, image_select_sentence) -->
-      <div v-if="['listen_select', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
+      <div :key="'opts-' + current" v-if="['listen_select', 'image_select_word', 'image_select_sentence'].includes(currentQuestion.type)" class="grid grid-cols-2 gap-4">
         <button
           v-for="(option, idx) in currentQuestion.options"
           :key="current + '-' + idx"
           @click="selectAnswer(option)"
           :disabled="answered"
-          :class="[
-            'p-5 rounded-xl text-xl font-semibold transition-all border-2',
-            getOptionClass(option),
-          ]"
+          class="quiz-option-btn p-5 rounded-xl text-xl font-semibold border-2 transition-colors duration-150 outline-none focus:outline-none"
+          :class="getOptionClass(option)"
         >
           {{ option }}
         </button>
@@ -452,7 +450,7 @@ watch(currentQuestion, (q) => {
 })
 
 const getOptionClass = (option) => {
-  if (!answered.value) return 'border-gray-200 bg-gray-50 hover:border-primary hover:bg-pink-50'
+  if (!answered.value) return 'border-gray-200 bg-gray-50'
   if (option === currentQuestion.value.answer) return 'border-green-400 bg-green-100'
   if (option === selectedOption.value && !isCorrect.value) return 'border-red-400 bg-red-100'
   return 'border-gray-200 bg-gray-50 opacity-50'
@@ -538,4 +536,14 @@ const nextQuestion = async () => {
   75% { transform: translateX(8px); }
 }
 .animate-shake { animation: shake 0.4s ease; }
+
+/* 防止移动端 tap 高亮残留和 hover 状态 lingering */
+.quiz-option-btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.quiz-option-btn:active {
+  opacity: 0.8;
+}
 </style>
